@@ -1,2 +1,8 @@
+#R
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
 #all files in data directory
 /data/*
