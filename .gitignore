@@ -3,6 +3,7 @@
 .Rhistory
 .RData
 .Ruserdata
+IPDtoSIRENO.Rproj
 
 #all files in data directory
 /data/*
