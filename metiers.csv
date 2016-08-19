@@ -1,0 +1,163 @@
+tipo_muestreo,TIP_MUESTREO,PUERTO,ORIGEN,ARTE,UNIPESCOD
+MT1A,1,A Coruña,Divisiones VIIIabde,PALANGRE DE FONDO,PALANGRE_AC
+MT1A,1,A Coruña,Divisiones VIIIabde,VOLANTA,ENMALLE_AC
+MT1A,1,A Coruña,Subárea VI (ICES),PALANGRE DE FONDO,PALANGRE_AC
+MT1A,1,A Coruña,Subárea VII (ICES),BACA,MERLUCER_AC
+MT1A,1,A Coruña,Subárea VII (ICES),BACA,RAPANTER_AC
+MT1A,1,A Coruña,Subárea VII (ICES),PALANGRE DE FONDO,PALANGRE_AC
+MT1A,1,Avilés,Divisiones VIIIabde,PALANGRE DE FONDO,PALANGRE_AC
+MT1A,1,Avilés,Divisiones VIIIabde,VOLANTA,ENMALLE_AC
+MT1A,1,Avilés,Subdivisión IXa-Norte,PALANGRES SIN IDENTIFICAR,PALANGRE_CN
+MT1A,1,Avilés,Subdivisión IXa-Norte,TRASMALLO,TRASMALL_CN
+MT1A,1,Avilés,Subdivisión VIIIc-Este,BACA,BACA_CN
+MT1A,1,Avilés,Subdivisión VIIIc-Este,BACA,JURELERA_CN
+MT1A,1,Avilés,Subdivisión VIIIc-Este,BETA,BETA_CN
+MT1A,1,Avilés,Subdivisión VIIIc-Este,CERCO,CERCO_CN
+MT1A,1,Avilés,Subdivisión VIIIc-Este,LINEAS FIJAS,LIN_CABALLA
+MT1A,1,Avilés,Subdivisión VIIIc-Este,LINEAS FIJAS,LIN_CALAMAR
+MT1A,1,Avilés,Subdivisión VIIIc-Este,LINEAS FIJAS,LIN_MERLUZA
+MT1A,1,Avilés,Subdivisión VIIIc-Este,NASA,NASA_NECORA
+MT1A,1,Avilés,Subdivisión VIIIc-Este,NASA,NASA_PECES
+MT1A,1,Avilés,Subdivisión VIIIc-Este,NASA,NASAPULP_CN
+MT1A,1,Avilés,Subdivisión VIIIc-Este,PALANGRES SIN IDENTIFICAR,PALANGRE_CN
+MT1A,1,Avilés,Subdivisión VIIIc-Este,PAREJA,PAREJA_CN
+MT1A,1,Avilés,Subdivisión VIIIc-Este,RASCO,RASCO_CN
+MT1A,1,Avilés,Subdivisión VIIIc-Este,TRASMALLO,TRASMALL_CN
+MT1A,1,Avilés,Subdivisión VIIIc-Este,VOLANTA,VOLANTA_CN
+MT1A,1,Avilés,Subdivisión VIIIc-Oeste,BACA,BACA_CN
+MT1A,1,Avilés,Subdivisión VIIIc-Oeste,CERCO,CERCO_CN
+MT1A,1,Avilés,Subdivisión VIIIc-Oeste,LINEAS FIJAS,LIN_CABALLA
+MT1A,1,Avilés,Subdivisión VIIIc-Oeste,PALANGRES SIN IDENTIFICAR,PALANGRE_CN
+MT1A,1,Avilés,Subdivisión VIIIc-Oeste,TRASMALLO,TRASMALL_CN
+MT1A,1,Cádiz,Subdivisión IXa-Sur,CERCO,CERCO_GC
+MT1A,1,Finisterre,Subdivisión IXa-Norte,BETA,BETA_CN
+MT1A,1,Finisterre,Subdivisión IXa-Norte,TRASMALLO,TRASMALL_CN
+MT1A,1,Finisterre,Subdivisión IXa-Norte,VOLANTA,VOLANTA_CN
+MT1A,1,Finisterre,Subdivisión VIIIc-Oeste,BETA,BETA_CN
+MT1A,1,Finisterre,Subdivisión VIIIc-Oeste,VOLANTA,VOLANTA_CN
+MT1A,1,Gijón,Subdivisión VIIIc-Este,BACA,BACA_CN
+MT1A,1,Gijón,Subdivisión VIIIc-Este,BACA,JURELERA_CN
+MT1A,1,Gijón,Subdivisión VIIIc-Este,LINEAS FIJAS,LIN_CABALLA
+MT1A,1,Gijón,Subdivisión VIIIc-Este,PALANGRES SIN IDENTIFICAR,PALANGRE_CN
+MT1A,1,Gijón,Subdivisión VIIIc-Este,TRASMALLO,TRASMALL_CN
+MT1A,1,Isla Cristina,Subdivisión IXa-Sur,CERCO,CERCO_GC
+MT1A,1,Marín,Subdivisión IXa-Norte,BACA,BACA_CN
+MT1A,1,Muros,Subdivisión IXa-Norte,BETA,BETA_CN
+MT1A,1,Muros,Subdivisión IXa-Norte,NASA,NASAPULP_CN
+MT1A,1,San Vicente de la Barquera,Subdivisión VIIIc-Este,RASCO,RASCO_CN
+MT1A,1,Sanlúcar de Barrameda,Subdivisión IXa-Sur,CERCO,CERCO_GC
+MT1A,1,Santa Eugenia de Ribeira,Subdivisión IXa-Norte,BACA,BACA_CN
+MT1A,1,Santa Eugenia de Ribeira,Subdivisión IXa-Norte,BACA,JURELERA_CN
+MT1A,1,Santa Eugenia de Ribeira,Subdivisión IXa-Norte,BETA,BETA_CN
+MT1A,1,Santa Eugenia de Ribeira,Subdivisión IXa-Norte,PALANGRES,PALANGRE_CN
+MT1A,1,Santa Eugenia de Ribeira,Subdivisión IXa-Norte,PAREJA,PAREJA_CN
+MT1A,1,Santa Eugenia de Ribeira,Subdivisión IXa-Norte,TRASMALLO,TRASMALL_CN
+MT1A,1,Santa Eugenia de Ribeira,Subdivisión VIIIc-Oeste,BACA,JURELERA_CN
+MT1A,1,Santa Eugenia de Ribeira,Subdivisión VIIIc-Oeste,PAREJA,PAREJA_CN
+MT1A,1,Santander,Divisiones VIIIabde,BACA,BACA_AC
+MT1A,1,Santander,Divisiones VIIIabde,VOLANTA,ENMALLE_AC
+MT1A,1,Santander,Subárea VII (ICES),VOLANTA,ENMALLE_AC
+MT1A,1,Santander,Subdivisión VIIIc-Este,BACA,BACA_CN
+MT1A,1,Santander,Subdivisión VIIIc-Este,BACA,JURELERA_CN
+MT1A,1,Santander,Subdivisión VIIIc-Este,BETA,BETA_CN
+MT1A,1,Santander,Subdivisión VIIIc-Este,MIÑO,TRASMALL_CN
+MT1A,1,Santander,Subdivisión VIIIc-Este,NASA,NASAPULP_CN
+MT1A,1,Santander,Subdivisión VIIIc-Este,PALANGRES SIN IDENTIFICAR,PALANGRE_CN
+MT1A,1,Santander,Subdivisión VIIIc-Este,TRASMALLO,TRASMALL_CN
+MT1A,1,Santander,Subdivisión VIIIc-Este,VOLANTA,VOLANTA_CN
+MT1A,1,Santoña,Divisiones VIIIabde,CERCO,CERCO_CN
+MT1A,1,Santoña,Subdivisión VIIIc-Este,CERCO,CERCO_CN
+MT1A,1,Vigo,Subárea VII (ICES),BACA,RAPANTER_AC
+MT1A,1,Vigo,Subdivisión IXa-Centro Norte,BACA,BACA_APN
+MT1A,1,Vigo,Subdivisión IXa-Norte,BACA,BACA_CN
+MT1A,1,Vigo,Subdivisión IXa-Norte,CERCO,CERCO_CN
+MT2A,2,A Coruña,Divisiones VIIIabde,PALANGRE DE FONDO,PALANGRE_AC
+MT2A,2,A Coruña,Subárea VII (ICES),BACA,MERLUCER_AC
+MT2A,2,A Coruña,Subárea VII (ICES),PALANGRE DE FONDO,PALANGRE_AC
+MT2A,2,A Coruña,Subdivisión IXa-Norte,BACA,BACA_CN
+MT2A,2,A Coruña,Subdivisión IXa-Norte,CERCO,CERCO_CN
+MT2A,2,A Coruña,Subdivisión IXa-Norte,PALANGRE DE FONDO,PALANGRE_CN
+MT2A,2,A Coruña,Subdivisión VIIIc-Este,CERCO,CERCO_CN
+MT2A,2,A Coruña,Subdivisión VIIIc-Este,PALANGRE DE FONDO,PALANGRE_CN
+MT2A,2,A Coruña,Subdivisión VIIIc-Este,PAREJA,PAREJA_CN
+MT2A,2,A Coruña,Subdivisión VIIIc-Oeste,BACA,BACA_CN
+MT2A,2,A Coruña,Subdivisión VIIIc-Oeste,BACA,JURELERA_CN
+MT2A,2,A Coruña,Subdivisión VIIIc-Oeste,CERCO,CERCO_CN
+MT2A,2,A Coruña,Subdivisión VIIIc-Oeste,NASA,NASAPULP_CN
+MT2A,2,A Coruña,Subdivisión VIIIc-Oeste,PALANGRE DE FONDO,PALANGRE_CN
+MT2A,2,A Coruña,Subdivisión VIIIc-Oeste,PAREJA,PAREJA_CN
+MT2A,2,Avilés,Divisiones VIIIabde,PALANGRE DE FONDO,PALANGRE_AC
+MT2A,2,Avilés,Subárea VII (ICES),PALANGRE DE FONDO,PALANGRE_AC
+MT2A,2,Avilés,Subdivisión VIIIc-Este,BACA,JURELERA_CN
+MT2A,2,Avilés,Subdivisión VIIIc-Este,BETA,BETA_CN
+MT2A,2,Avilés,Subdivisión VIIIc-Este,CERCO,CERCO_CN
+MT2A,2,Avilés,Subdivisión VIIIc-Este,LINEAS FIJAS,LIN_CABALLA
+MT2A,2,Avilés,Subdivisión VIIIc-Este,PALANGRES SIN IDENTIFICAR,PALANGRE_CN
+MT2A,2,Avilés,Subdivisión VIIIc-Este,PAREJA,PAREJA_CN
+MT2A,2,Avilés,Subdivisión VIIIc-Este,TRASMALLO,TRASMALL_CN
+MT2A,2,Barbate,Subdivisión IXa-Sur,CERCO,CERCO_GC
+MT2A,2,Barbate,Subdivisión IXa-Sur,PALANGRE DE FONDO,SABLE_GC
+MT2A,2,Burela,Subdivisión VIIIc-Este,BACA,BACA_CN
+MT2A,2,Burela,Subdivisión VIIIc-Este,BACA,JURELERA_CN
+MT2A,2,Burela,Subdivisión VIIIc-Oeste,BACA,BACA_CN
+MT2A,2,Burela,Subdivisión VIIIc-Oeste,BACA,JURELERA_CN
+MT2A,2,Cedeira,Subdivisión VIIIc-Este,RASCO,RASCO_CN
+MT2A,2,Cedeira,Subdivisión VIIIc-Oeste,RASCO,RASCO_CN
+MT2A,2,Cedeira,Subdivisión VIIIc-Oeste,VOLANTA,VOLANTA_CN
+MT2A,2,Cillero,Divisiones VIIIabde,PALANGRE DE FONDO,PALANGRE_AC
+MT2A,2,Cillero,Divisiones VIIIabde,VOLANTA,ENMALLE_AC
+MT2A,2,Cillero,Subárea VII (ICES),PALANGRE DE FONDO,PALANGRE_AC
+MT2A,2,Cillero,Subárea VII (ICES),VOLANTA,ENMALLE_AC
+MT2A,2,Finisterre,Subdivisión IXa-Norte,BETA,BETA_CN
+MT2A,2,Finisterre,Subdivisión IXa-Norte,VOLANTA,BETA_CN
+MT2A,2,Finisterre,Subdivisión IXa-Norte,VOLANTA,VOLANTA_CN
+MT2A,2,Gijón,Divisiones VIIIabde,BACA,BACA_AC
+MT2A,2,Gijón,Subdivisión VIIIc-Este,BACA,BACA_CN
+MT2A,2,Gijón,Subdivisión VIIIc-Este,BACA,JURELERA_CN
+MT2A,2,Gijón,Subdivisión VIIIc-Este,CERCO,CERCO_CN
+MT2A,2,Gijón,Subdivisión VIIIc-Este,PALANGRES SIN IDENTIFICAR,PALANGRE_CN
+MT2A,2,Gijón,Subdivisión VIIIc-Este,TRASMALLO,TRASMALL_CN
+MT2A,2,Gijón,Subdivisión VIIIc-Este,VOLANTA,VOLANTA_CN
+MT2A,2,Gijón,Subdivisión VIIIc-Oeste,BACA,BACA_CN
+MT2A,2,Luarca,Subdivisión VIIIc-Este,VOLANTA,VOLANTA_CN
+MT2A,2,Marín,Subdivisión IXa-Norte,BACA,BACA_CN
+MT2A,2,Marín,Subdivisión VIIIc-Oeste,BACA,BACA_CN
+MT2A,2,Muros,Subdivisión IXa-Norte,BETA,BETA_CN
+MT2A,2,Muros,Subdivisión IXa-Norte,NASA,NASAPULP_CN
+MT2A,2,San Vicente de la Barquera,Subdivisión VIIIc-Este,RASCO,RASCO_CN
+MT2A,2,Santa Eugenia de Ribeira,Subdivisión IXa-Norte,BACA,BACA_CN
+MT2A,2,Santa Eugenia de Ribeira,Subdivisión IXa-Norte,BACA,JURELERA_CN
+MT2A,2,Santa Eugenia de Ribeira,Subdivisión IXa-Norte,BACA,PAREJA_CN
+MT2A,2,Santa Eugenia de Ribeira,Subdivisión IXa-Norte,BETA,BETA_CN
+MT2A,2,Santa Eugenia de Ribeira,Subdivisión IXa-Norte,CERCO,CERCO_CN
+MT2A,2,Santa Eugenia de Ribeira,Subdivisión IXa-Norte,PALANGRES,PALANGRE_CN
+MT2A,2,Santa Eugenia de Ribeira,Subdivisión IXa-Norte,PAREJA,PAREJA_CN
+MT2A,2,Santa Eugenia de Ribeira,Subdivisión VIIIc-Este,BACA,JURELERA_CN
+MT2A,2,Santa Eugenia de Ribeira,Subdivisión VIIIc-Este,CERCO,CERCO_CN
+MT2A,2,Santa Eugenia de Ribeira,Subdivisión VIIIc-Este,PALANGRES,PALANGRE_CN
+MT2A,2,Santa Eugenia de Ribeira,Subdivisión VIIIc-Este,PAREJA,PAREJA_CN
+MT2A,2,Santa Eugenia de Ribeira,Subdivisión VIIIc-Oeste,BACA,BACA_CN
+MT2A,2,Santa Eugenia de Ribeira,Subdivisión VIIIc-Oeste,BACA,JURELERA_CN
+MT2A,2,Santa Eugenia de Ribeira,Subdivisión VIIIc-Oeste,CERCO,CERCO_CN
+MT2A,2,Santa Eugenia de Ribeira,Subdivisión VIIIc-Oeste,PAREJA,PAREJA_CN
+MT2A,2,Santander,Divisiones VIIIabde,BACA,BACA_AC
+MT2A,2,Santander,Subdivisión VIIIc-Este,BACA,BACA_CN
+MT2A,2,Santander,Subdivisión VIIIc-Este,BACA,JURELERA_CN
+MT2A,2,Santoña,Divisiones VIIIabde,CERCO,CERCO_CN
+MT2A,2,Santoña,Subdivisión VIIIc-Este,CERCO,CERCO_CN
+MT2A,2,Santoña,Subdivisión VIIIc-Este,LINEAS FIJAS,LIN_CABALLA
+MT2A,2,Santoña,Subdivisión VIIIc-Este,RASCO,RASCO_CN
+MT2A,2,Tarifa,Subdivisión IXa-Sur,LINEAS MOVILES,VORACERA_GC
+MT2A,2,Vigo,Subárea VII (ICES),BACA,RAPANTER_AC
+MT2A,2,Vigo,Subdivisión IXa-Centro Norte,BACA,BACA_APN
+MT2A,2,Vigo,Subdivisión IXa-Norte,CERCO,CERCO_CN
+MT2B,4,Ayamonte,Subdivisión IXa-Sur,BACA,BACA_GC
+MT2B,4,Barbate,Subdivisión IXa-Sur,BACA,BACA_GC
+MT2B,4,Cádiz,Subdivisión IXa-Sur,CERCO,CERCO_GC
+MT2B,4,Isla Cristina,Subdivisión IXa-Sur,BACA,BACA_GC
+MT2B,4,Isla Cristina,Subdivisión IXa-Sur,CERCO,CERCO_GC
+MT2B,4,Puerto de Santa María,Subdivisión IXa-Sur,CERCO,CERCO_GC
+MT2B,4,Punta Umbría,Subdivisión IXa-Sur,BACA,BACA_GC
+MT2B,4,Punta Umbría,Subdivisión IXa-Sur,CERCO,CERCO_GC
+MT2B,4,Sanlúcar de Barrameda,Subdivisión IXa-Sur,BACA,BACA_GC
+MT2B,4,Sanlúcar de Barrameda,Subdivisión IXa-Sur,CERCO,CERCO_GC
