@@ -5,8 +5,8 @@
 ####
 #### author: Marco A. Amez Fernandez
 #### email: ieo.marco.a.amez@gmail.com
-#### date of last modification: 22/7//2016
-#### version: 0.1
+#### date of last modification: 19/8//2016
+#### version: 0.9
 ####
 #### files required: metiers.csv
 
