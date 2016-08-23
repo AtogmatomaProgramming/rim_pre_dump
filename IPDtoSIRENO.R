@@ -71,16 +71,6 @@ BASE_FIELDS <- c("PUERTO", "FECHA", "BARCO", "UNIPESCOD", "TIPO_MUESTREO")
 
 # #### FUNCTIONS ###############################################################
 
-# function to change the level in a variable of a dataframe:
-# df: dataframe
-# variable: variable (column)
-# erroneus_data
-# correct_data 
-correct_level_in_variable <- function(df, variable, erroneus_data, correct_data) {
-  ppp <- mapvalues(df[[variable]], c(erroneus_data), c(correct_data))
-  return(ppp)
-  export_log_file("change", variable, erroneus_data, correct_data)
-}
 
 # function to create and/or update log file
 export_log_file <- function(action, variable, erroneus_data, correct_data){
@@ -89,15 +79,33 @@ export_log_file <- function(action, variable, erroneus_data, correct_data){
   file_with_path <- file.path(paste(PATH_FILE, PATH_DATA, LOG_FILE, sep = "/"))
   
   if (!file.exists(file_with_path)){
-    header <- "ACTION,variable,ERROENUS_DATA,CORRECT_DATA"
+    header <- "ACTION,variable,ERRONEUS_DATA,CORRECT_DATA,DATE"
     write(header, file_with_path)    
   }
   
   #append data to file:
-  to_append <- paste(action, variable, erroneus_data, correct_data, sep = ",")
+  date <- format(as.POSIXlt(Sys.time()), "%d-%m-%Y %H:%M:%S")
+    #convert action to uppercase
+    action <- toupper(action)
+  to_append <- paste(action, variable, erroneus_data, correct_data, date, sep = ",")
   write(to_append, file_with_path, append = TRUE)
   
 }
+
+
+
+# function to change the level in a variable of a dataframe:
+# df: dataframe
+# variable: variable (column)
+# erroneus_data
+# correct_data 
+correct_level_in_variable <- function(df, variable, erroneus_data, correct_data) {
+  df[[variable]] <- mapvalues(df[[variable]], c(erroneus_data), c(correct_data))
+  export_log_file("change", variable, erroneus_data, correct_data)
+  return(df)
+}
+
+
 
 # function to export file
 exportFileLog <- function(df, log){
@@ -122,8 +130,8 @@ estrato_rim_erroneus <- levels(droplevels(estrato_rim_erroneus$ESTRATO_RIM)) # e
 
 errors_estrato_rim <- records[records$ESTRATO_RIM==estrato_rim_erroneus,]
 
-records <- correct_level_in_variable(records, "ESTRATO_RIM", "OTB_DEF", "BACA-CN")
-
+recordsppp <- correct_level_in_variable(records, "ESTRATO_RIM", "OTB_DEF", "BACA_CN")
+levels(recordsppp$ESTRATO_RIM)
 
 
 
