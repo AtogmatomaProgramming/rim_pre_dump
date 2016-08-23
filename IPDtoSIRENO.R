@@ -8,7 +8,7 @@
 #### date of last modification: 19/8//2016
 #### version: 0.9
 ####
-#### files required: metiers.csv
+#### files required: file from IPD with data for de the dump in SIRENO
 
 
 # #### CONFIG ##################################################################
@@ -16,8 +16,16 @@
 # ---- PACKAGES ----------------------------------------------------------------
 
 library(dplyr) #arrange_()
-library(devtools) # Need this package to use install_github
-install_github("Eucrow/sapmuebase") # Make sure this is the last version
+library(plyr) #mapvalues(): replace items
+library(tools) #file_ext()
+library(stringr) #str_split()
+library(devtools) # Need this package to use install and install_github
+
+  # ---- install sapmuebase from local
+  install("F:/misdoc/sap/sapmuebase")
+  # ---- install sapmuebase from github
+  #install_github("Eucrow/sapmuebase") # Make sure this is the last version
+
 library(sapmuebase) # and load the library
 
 #initial_wd <- getwd()
@@ -37,20 +45,24 @@ PATH <- getwd()
 ERRORS <- list() #list with all errors found in dataframes
 MESSAGE_ERRORS<- list() #list with the errors
 
+
 ################################################################################
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES:
-PATH_FILENAME <- "F:/misdoc/sap/IPDtoSIRENO/data/"
-FILENAME <- "muestreos_especie_1_2016_todos.txt"
-MONTH <- 1
+PATH_FILE <- "F:/misdoc/sap/IPDtoSIRENO"
+PATH_DATA<- "/data"
+#FILENAME <- "muestreos_especie_4_2016_todos_ANADIDOS_ERRORES.txt"
+FILENAME <- "muestreos_especie_4_2016_todos_.txt"
+MONTH <- 4
 YEAR <- "2016"
 ################################################################################
 
-PATH_ERRORS <- paste(PATH_FILENAME,"/errors",sep="")
+LOG_FILE <- paste("LOG_", YEAR, "_", MONTH, ".csv", sep="")
 
-# #### IMPORT FILES ############################################################
-metiers <- read.csv("metiers_nuevo.csv")
-puertos <- read.csv("puerto_locode_sireno.csv")
-divisiones <- read.csv("divisiones.csv")
+PATH_ERRORS <- paste(PATH_FILE,"/errors",sep="")
+
+# #### RECOVERY DATA SETS ######################################################
+
+data(estrato_rim) #load the data set
 
 # #### CONSTANS ################################################################
 
@@ -59,13 +71,63 @@ BASE_FIELDS <- c("PUERTO", "FECHA", "BARCO", "UNIPESCOD", "TIPO_MUESTREO")
 
 # #### FUNCTIONS ###############################################################
 
+# function to change the level in a variable of a dataframe:
+# df: dataframe
+# variable: variable (column)
+# erroneus_data
+# correct_data 
+correct_level_in_variable <- function(df, variable, erroneus_data, correct_data) {
+  ppp <- mapvalues(df[[variable]], c(erroneus_data), c(correct_data))
+  return(ppp)
+  export_log_file("change", variable, erroneus_data, correct_data)
+}
+
+# function to create and/or update log file
+export_log_file <- function(action, variable, erroneus_data, correct_data){
+  
+  #check if the file exists. If not, create it.
+  file_with_path <- file.path(paste(PATH_FILE, PATH_DATA, LOG_FILE, sep = "/"))
+  
+  if (!file.exists(file_with_path)){
+    header <- "ACTION,variable,ERROENUS_DATA,CORRECT_DATA"
+    write(header, file_with_path)    
+  }
+  
+  #append data to file:
+  to_append <- paste(action, variable, erroneus_data, correct_data, sep = ",")
+  write(to_append, file_with_path, append = TRUE)
+  
+}
+
+# function to export file
+exportFileLog <- function(df, log){
+  filename <- file_path_sans_ext(basename(FILENAME))
+
+  file = paste("samples_up", YEAR, MONTH, "LOG", log, sep="_")
+  write.csv(df, file)
+  exportLogFile (file)
+}
 
 # ---- import file ---- #
-records <- importIPDFile("data/muestreos_especie_4_2016_todos_.txt")
+records <- importIPDFile(paste(PATH_DATA,FILENAME, sep="/"))
+
 
 # ---- metiers ----#
-levels(records$metier)
-levels(records$tipo_muestreo)
-errors_1_metiers <- merge(x = records, y= metiers, by.x = c("tipo_muestreo", "metier", "cod_puerto", "cod_origen"), by.y = c("tipo_muestreo", "UNIPESCOD", "COD_SIRENO", "COD_DIVISION_SIRENO"), all.x = TRUE)
-errors_1_metiers <- unique(errors_1_metiers$metier)
-nas <- subset(errors_1_metiers, is.na(errors_1_metiers$ARTE))
+levels(records$ESTRATO_RIM)
+new_estrato_rim <- estrato_rim
+new_estrato_rim$VALID <- "VALID"
+estrato_rim_erroneus <- merge(x = records, y= new_estrato_rim, by.x = c("ESTRATO_RIM"), by.y = c("ESTRATO_RIM"), all.x = TRUE)
+estrato_rim_erroneus <- subset(estrato_rim_erroneus, is.na(VALID))
+estrato_rim_erroneus <- levels(droplevels(estrato_rim_erroneus$ESTRATO_RIM)) # estrato_rim erroneus
+
+errors_estrato_rim <- records[records$ESTRATO_RIM==estrato_rim_erroneus,]
+
+records <- correct_level_in_variable(records, "ESTRATO_RIM", "OTB_DEF", "BACA-CN")
+
+
+
+
+
+
+
+
