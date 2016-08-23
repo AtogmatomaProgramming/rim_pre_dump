@@ -116,10 +116,11 @@ exportFileLog <- function(df, log){
   exportLogFile (file)
 }
 
-# ---- import file ---- #
+# #### IMPORT FILE #############################################################
 records <- importIPDFile(paste(PATH_DATA,FILENAME, sep="/"))
 
 
+# #### START CHECK #############################################################
 # ---- metiers ----#
 levels(records$ESTRATO_RIM)
 new_estrato_rim <- estrato_rim
