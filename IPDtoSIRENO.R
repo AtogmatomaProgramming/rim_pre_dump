@@ -63,7 +63,10 @@ PATH_ERRORS <- paste(PATH_FILE,"/errors",sep="")
 # #### RECOVERY DATA SETS ######################################################
 
 data(estrato_rim) #load the data set
+estrato_rim <- estrato_rim
 
+data(puerto)
+puerto <- puerto
 # #### CONSTANS ################################################################
 
 ###list with the common fields used in the tables
@@ -87,6 +90,7 @@ export_log_file <- function(action, variable, erroneus_data, correct_data){
   date <- format(as.POSIXlt(Sys.time()), "%d-%m-%Y %H:%M:%S")
     #convert action to uppercase
     action <- toupper(action)
+    
   to_append <- paste(action, variable, erroneus_data, correct_data, date, sep = ",")
   write(to_append, file_with_path, append = TRUE)
   
@@ -110,6 +114,8 @@ correct_level_in_variable <- function(df, variable, erroneus_data, correct_data)
 # function to export file
 exportFileLog <- function(df, log){
   filename <- file_path_sans_ext(basename(FILENAME))
+  
+  MONTH <- sprintf("%02d", MONTH)
 
   file = paste("samples_up", YEAR, MONTH, "LOG", log, sep="_")
   write.csv(df, file)
@@ -117,26 +123,43 @@ exportFileLog <- function(df, log){
 }
 
 # #### IMPORT FILE #############################################################
-records <- importIPDFile(paste(PATH_DATA,FILENAME, sep="/"))
+records <- import_IPD_file(paste(PATH_DATA,FILENAME, sep="/"))
 
 
 # #### START CHECK #############################################################
 # ---- metiers ----#
-levels(records$ESTRATO_RIM)
-new_estrato_rim <- estrato_rim
-new_estrato_rim$VALID <- "VALID"
-estrato_rim_erroneus <- merge(x = records, y= new_estrato_rim, by.x = c("ESTRATO_RIM"), by.y = c("ESTRATO_RIM"), all.x = TRUE)
-estrato_rim_erroneus <- subset(estrato_rim_erroneus, is.na(VALID))
-estrato_rim_erroneus <- levels(droplevels(estrato_rim_erroneus$ESTRATO_RIM)) # estrato_rim erroneus
+# levels(records$ESTRATO_RIM)
+# new_estrato_rim <- estrato_rim
+# new_estrato_rim$VALID <- "VALID"
+# estrato_rim_erroneus <- merge(x = records, y= new_estrato_rim, by.x = c("ESTRATO_RIM"), by.y = c("ESTRATO_RIM"), all.x = TRUE)
+# estrato_rim_erroneus <- subset(estrato_rim_erroneus, is.na(VALID))
+# estrato_rim_erroneus <- levels(droplevels(estrato_rim_erroneus$ESTRATO_RIM)) # estrato_rim erroneus
+# 
+# errors_estrato_rim <- records[records$ESTRATO_RIM==estrato_rim_erroneus,]
+# 
+# recordsppp <- correct_level_in_variable(records, "ESTRATO_RIM", "OTB_DEF", "BACA_CN")
+# levels(recordsppp$ESTRATO_RIM)
 
-errors_estrato_rim <- records[records$ESTRATO_RIM==estrato_rim_erroneus,]
+# function to ckeck variables. It's only for variables ESTRATO_RIM, puerto,
+# origen, arte, procedencia and tipo_muestreo
+# return a dataframe with samples with the erroneus variables
+check_variable <- function (variable){
+  # look if the variable begin with "COD_". In this case, the name of the data source
+  # is the name of the variable without "COD."
+  if (grepl("^COD_", variable)){
+    variable <- strsplit(variable, "COD_")
+    variable <- variable[[1]][2]
+  }
+  name_data_set <- tolower(variable)
+  errors <- merge(x = records, y = get(name_data_set), all.x = TRUE)
+  variable_to_filter <- names(errors[length(errors)])
+  errors <- subset(errors, is.na(get(variable_to_filter)))
+  return(errors)
+}
 
-recordsppp <- correct_level_in_variable(records, "ESTRATO_RIM", "OTB_DEF", "BACA_CN")
-levels(recordsppp$ESTRATO_RIM)
-
-
-
-
-
-
-
+check_estrato_rim <- check_variable("ESTRATO_RIM")
+check_puerto <- check_variable("COD_PUERTO")
+check_arte <- check_variable("COD_ARTE")
+check_origen <- check_variable("COD_ORIGEN")
+check_procedencia <- check_variable("PROCEDENCIA")
+check_tipo_muestreo <- check_variable("COD_TIPO_MUESTREO")
