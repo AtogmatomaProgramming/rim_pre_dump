@@ -63,16 +63,18 @@ PATH_ERRORS <- paste(PATH_FILE,"/errors",sep="")
 # #### RECOVERY DATA SETS ######################################################
 
 data(estrato_rim) #load the data set
-estrato_rim <- estrato_rim
+# estrato_rim <- estrato_rim
 
 data(puerto)
-puerto <- puerto
+# puerto <- puerto
 # #### CONSTANS ################################################################
 
 ###list with the common fields used in the tables
 BASE_FIELDS <- c("PUERTO", "FECHA", "BARCO", "UNIPESCOD", "TIPO_MUESTREO")
 
 # #### FUNCTIONS ###############################################################
+
+
 
 
 # function to create and/or update log file
@@ -97,18 +99,45 @@ export_log_file <- function(action, variable, erroneus_data, correct_data){
 }
 
 
+# function to ckeck variables.
+# It's only available for variables with a data source (master): ESTRATO_RIM, COD_PUERTO,
+# COD_ORIGEN, COD_ARTE, COD_PROCEDENCIA and TIPO_MUESTREO
+# return a dataframe with samples with the erroneus variables
+check_variable_with_master <- function (variable){
+  
+  if(variable != "ESTRATO_RIM" && variable != "COD_PUERTO" &&
+     variable != "COD_ORIGEN" && variable != "COD_ARTE" &&
+     variable != "COD_PROCEDENCIA" && variable != "TIPO_MUESTREO"){
+    stop(paste("This function is not available for ", variable))
+  }
+  
+  # look if the variable begin with "COD_". In this case, the name of the data source
+  # is the name of the variable without "COD."
+  if (grepl("^COD_", variable)){
+    variable <- strsplit(variable, "COD_")
+    variable <- variable[[1]][2]
+  }
+  name_data_set <- tolower(variable)
+  errors <- merge(x = records, y = get(name_data_set), all.x = TRUE)
+  variable_to_filter <- names(errors[length(errors)])
+  errors <- subset(errors, is.na(get(variable_to_filter)))
+  return(errors)
+}
+
+
 
 # function to change the level in a variable of a dataframe:
 # df: dataframe
 # variable: variable (column)
-# erroneus_data
-# correct_data 
-correct_level_in_variable <- function(df, variable, erroneus_data, correct_data) {
-  df[[variable]] <- mapvalues(df[[variable]], c(erroneus_data), c(correct_data))
-  export_log_file("change", variable, erroneus_data, correct_data)
+# erroneus_data: a vector of characters with the erroneus factor
+# correct_data: a vector of characters with its correct factor
+correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data) {
+  for (data in erroneus_data) {
+    index <- which(erroneus_data==data)
+    df[[variable]] <- recode(df[[variable]], data = correct_data[index])
+  }
   return(df)
 }
-
 
 
 # function to export file
@@ -127,39 +156,19 @@ records <- import_IPD_file(paste(PATH_DATA,FILENAME, sep="/"))
 
 
 # #### START CHECK #############################################################
-# ---- metiers ----#
-# levels(records$ESTRATO_RIM)
-# new_estrato_rim <- estrato_rim
-# new_estrato_rim$VALID <- "VALID"
-# estrato_rim_erroneus <- merge(x = records, y= new_estrato_rim, by.x = c("ESTRATO_RIM"), by.y = c("ESTRATO_RIM"), all.x = TRUE)
-# estrato_rim_erroneus <- subset(estrato_rim_erroneus, is.na(VALID))
-# estrato_rim_erroneus <- levels(droplevels(estrato_rim_erroneus$ESTRATO_RIM)) # estrato_rim erroneus
-# 
-# errors_estrato_rim <- records[records$ESTRATO_RIM==estrato_rim_erroneus,]
-# 
-# recordsppp <- correct_level_in_variable(records, "ESTRATO_RIM", "OTB_DEF", "BACA_CN")
-# levels(recordsppp$ESTRATO_RIM)
 
-# function to ckeck variables. It's only for variables ESTRATO_RIM, puerto,
-# origen, arte, procedencia and tipo_muestreo
-# return a dataframe with samples with the erroneus variables
-check_variable <- function (variable){
-  # look if the variable begin with "COD_". In this case, the name of the data source
-  # is the name of the variable without "COD."
-  if (grepl("^COD_", variable)){
-    variable <- strsplit(variable, "COD_")
-    variable <- variable[[1]][2]
-  }
-  name_data_set <- tolower(variable)
-  errors <- merge(x = records, y = get(name_data_set), all.x = TRUE)
-  variable_to_filter <- names(errors[length(errors)])
-  errors <- subset(errors, is.na(get(variable_to_filter)))
-  return(errors)
-}
 
-check_estrato_rim <- check_variable("ESTRATO_RIM")
-check_puerto <- check_variable("COD_PUERTO")
-check_arte <- check_variable("COD_ARTE")
-check_origen <- check_variable("COD_ORIGEN")
-check_procedencia <- check_variable("PROCEDENCIA")
-check_tipo_muestreo <- check_variable("COD_TIPO_MUESTREO")
+check_estrato_rim <- check_variable_with_master("ESTRATO_RIM")
+check_puerto <- check_variable_with_master("COD_PUERTO")
+check_arte <- check_variable_with_master("COD_ARTE")
+check_origen <- check_variable_with_master("COD_ORIGEN")
+check_procedencia <- check_variable_with_master("PROCEDENCIA")
+check_tipo_muestreo <- check_variable_with_master("COD_TIPO_MUESTREO")
+
+
+
+prueba <- correct_levels_in_variable(records, "ESTRATO_RIM", erroneus, correct)
+
+
+
+
