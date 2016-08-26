@@ -45,9 +45,6 @@ PATH <- getwd()
 ERRORS <- list() #list with all errors found in dataframes
 MESSAGE_ERRORS<- list() #list with the errors
 
-# list with the common fields used in all tables
-BASE_FIELDS <- c("COD_PUERTO", "LOCCODE", "PUERTO", "FECHA", "COD_BARCO", "BARCO", "ESTRATO_RIM", "COD_TIPO_MUE", "TIPO_MUE")
-
 ################################################################################
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES:
 PATH_FILE <- "F:/misdoc/sap/IPDtoSIRENO"
@@ -71,8 +68,8 @@ data(puerto)
 # puerto <- puerto
 # #### CONSTANS ################################################################
 
-###list with the common fields used in the tables
-BASE_FIELDS <- c("PUERTO", "FECHA", "BARCO", "UNIPESCOD", "TIPO_MUESTREO")
+# list with the common fields used in all tables
+BASE_FIELDS <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_TIPO_MUE")
 
 # #### FUNCTIONS ###############################################################
 
@@ -80,13 +77,13 @@ BASE_FIELDS <- c("PUERTO", "FECHA", "BARCO", "UNIPESCOD", "TIPO_MUESTREO")
 
 
 # function to create and/or update log file
-export_log_file <- function(action, variable, erroneus_data, correct_data){
+export_log_file <- function(action, variable, erroneus_data, correct_data, conditional_variable ="", condition =""){
   
   #check if the file exists. If not, create it.
   file_with_path <- file.path(paste(PATH_FILE, PATH_DATA, LOG_FILE, sep = "/"))
   
   if (!file.exists(file_with_path)){
-    header <- "ACTION,variable,ERRONEUS_DATA,CORRECT_DATA,DATE"
+    header <- "ACTION,variable,ERRONEUS_DATA,CORRECT_DATA,CONDITIONAL_VARIABLE,CONDITIONDATE"
     write(header, file_with_path)    
   }
   
@@ -95,7 +92,7 @@ export_log_file <- function(action, variable, erroneus_data, correct_data){
     #convert action to uppercase
     action <- toupper(action)
     
-  to_append <- paste(action, variable, erroneus_data, correct_data, date, sep = ",")
+  to_append <- paste(action, variable, erroneus_data, correct_data, conditional_variable, condition, date, sep = ",")
   write(to_append, file_with_path, append = TRUE)
   
 }
@@ -106,23 +103,35 @@ export_log_file <- function(action, variable, erroneus_data, correct_data){
 # COD_ORIGEN, COD_ARTE, COD_PROCEDENCIA and TIPO_MUESTREO
 # return a dataframe with samples with the erroneus variables
 check_variable_with_master <- function (variable){
-  
-  if(variable != "ESTRATO_RIM" && variable != "COD_PUERTO" &&
-     variable != "COD_ORIGEN" && variable != "COD_ARTE" &&
-     variable != "COD_PROCEDENCIA" && variable != "COD_TIPO_MUESTREO"){
+
+  if(variable != "ESTRATO_RIM" &&
+     variable != "COD_PUERTO" &&
+     variable != "COD_ORIGEN" &&
+     variable != "COD_ARTE" &&
+     variable != "PROCEDENCIA" &&
+     variable != "COD_TIPO_MUE"){
     stop(paste("This function is not available for ", variable))
   }
   
   # look if the variable begin with "COD_". In this case, the name of the data source
-  # is the name of the variable without "COD."
+  # is the name of the variable without "COD_"
   if (grepl("^COD_", variable)){
     variable <- strsplit(variable, "COD_")
     variable <- variable[[1]][2]
   }
   name_data_set <- tolower(variable)
+  #search the errors in variable
   errors <- merge(x = records, y = get(name_data_set), all.x = TRUE)
   variable_to_filter <- names(errors[length(errors)])
   errors <- subset(errors, is.na(get(variable_to_filter)))
+  #prepare to return
+  fields_to_filter <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_ARTE", "COD_ORIGEN", "COD_TIPO_MUE", "PROCEDENCIA")
+  
+  errors <- errors[,fields_to_filter]
+  errors$FECHA <- as.POSIXct(errors$FECHA)
+  errors <- arrange_(errors, fields_to_filter)
+  errors <- unique(errors)
+  #return
   return(errors)
 }
 
@@ -135,14 +144,6 @@ check_variable_with_master <- function (variable){
 # correct_data: a vector of characters with its correct factor
 # conditional_variable: a vector of characters with the name of the conditional variable
 # condition: a vector of characters with the conditional value
-# correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data) {
-#   for (data in erroneus_data) {
-#     index <- which(erroneus_data==data)
-#     df[[variable]] <- recode(df[[variable]], data = correct_data[index])
-#   }
-#   return(df)
-# }
-
 correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data, conditional_variable, condition) {
   # for (data in erroneus_data) {
   #   index <- which(erroneus_data==data)
@@ -150,20 +151,29 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
   # }
 
   if (missing(conditional_variable) && missing(condition)) {
-      df[[variable]] <- recode(df[[variable]], erroneus_data = correct_data)
+      df[[variable]] <- mapvalues(df[[variable]], from = erroneus_data, to = correct_data)
+      # add to log file
+      export_log_file("change", variable, erroneus_data, correct_data)
+      #return
       return(df)
   } else if (!missing(df) && !missing(variable) && !missing(erroneus_data) && !missing(correct_data)){
-    filtered <- df[df[conditional_variable] == condition,]
-    filtered[[variable]] <- mapvalues(filtered[[variable]], from = erroneus_data, to = correct_data)
-    
-    not_filtered <- df[df[conditional_variable] != condition,]
-    
-    df<-rbind(filtered, not_filtered)
-    return(df)  
+      filtered <- df[df[conditional_variable] == condition,]
+      filtered[[variable]] <- mapvalues(filtered[[variable]], from = erroneus_data, to = correct_data)
+      
+      not_filtered <- df[df[conditional_variable] != condition,]
+      
+      df<-rbind(filtered, not_filtered)
+      
+      # add to log file
+      error_text <- paste(erroneus_data, "from", conditional_variable, condition, sep=" ")
+      export_log_file("change", variable, erroneus_data, correct_data, conditional_variable, condition)
+      # return
+      return(df)  
   } else {
     stop("Some argument is missing.")
   }
 } 
+
 
 # function to export file
 exportFileLog <- function(df, log){
@@ -184,17 +194,19 @@ records <- import_IPD_file(paste(PATH_DATA,FILENAME, sep="/"))
 
 
 check_estrato_rim <- check_variable_with_master("ESTRATO_RIM")
+records <- correct_levels_in_variable(records, "ESTRATO_RIM", "OTB_DEF", "BACA_CN")
+
 check_puerto <- check_variable_with_master("COD_PUERTO")
 check_arte <- check_variable_with_master("COD_ARTE")
 check_origen <- check_variable_with_master("COD_ORIGEN")
 levels(check_origen$COD_ORIGEN)
-check_procedencia <- check_variable_with_master("COD_PROCEDENCIA")
-check_tipo_muestreo <- check_variable_with_master("COD_TIPO_MUESTREO")
+check_procedencia <- check_variable_with_master("PROCEDENCIA")
+check_tipo_muestreo <- check_variable_with_master("COD_TIPO_MUE")
 
 
 erroneus <- "OTB_DEF"
 correct <- "BACA_CN"
-prueba <- correct_levels_in_variable(records, "ESTRATO_RIM", "OTB_DEF", "baca", "ESTRATO_RIM")
+prueba <- correct_levels_in_variable(records, "COD_ORIGEN", "002", "111", "COD_PUERTO", "0907")
 levels(prueba$ESTRATO_RIM)
 
 
