@@ -15,8 +15,8 @@
 
 # ---- PACKAGES ----------------------------------------------------------------
 
+library(plyr) #mapvalues(): replace items IT'S BETTER TO LOAD plyr BEFORE dplyr
 library(dplyr) #arrange_()
-library(plyr) #mapvalues(): replace items
 library(tools) #file_ext()
 library(stringr) #str_split()
 library(devtools) # Need this package to use install and install_github
@@ -45,6 +45,8 @@ PATH <- getwd()
 ERRORS <- list() #list with all errors found in dataframes
 MESSAGE_ERRORS<- list() #list with the errors
 
+# list with the common fields used in all tables
+BASE_FIELDS <- c("COD_PUERTO", "LOCCODE", "PUERTO", "FECHA", "COD_BARCO", "BARCO", "ESTRATO_RIM", "COD_TIPO_MUE", "TIPO_MUE")
 
 ################################################################################
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES:
@@ -107,7 +109,7 @@ check_variable_with_master <- function (variable){
   
   if(variable != "ESTRATO_RIM" && variable != "COD_PUERTO" &&
      variable != "COD_ORIGEN" && variable != "COD_ARTE" &&
-     variable != "COD_PROCEDENCIA" && variable != "TIPO_MUESTREO"){
+     variable != "COD_PROCEDENCIA" && variable != "COD_TIPO_MUESTREO"){
     stop(paste("This function is not available for ", variable))
   }
   
@@ -131,14 +133,37 @@ check_variable_with_master <- function (variable){
 # variable: variable (column)
 # erroneus_data: a vector of characters with the erroneus factor
 # correct_data: a vector of characters with its correct factor
-correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data) {
-  for (data in erroneus_data) {
-    index <- which(erroneus_data==data)
-    df[[variable]] <- recode(df[[variable]], data = correct_data[index])
-  }
-  return(df)
-}
+# conditional_variable: a vector of characters with the name of the conditional variable
+# condition: a vector of characters with the conditional value
+# correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data) {
+#   for (data in erroneus_data) {
+#     index <- which(erroneus_data==data)
+#     df[[variable]] <- recode(df[[variable]], data = correct_data[index])
+#   }
+#   return(df)
+# }
 
+correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data, conditional_variable, condition) {
+  # for (data in erroneus_data) {
+  #   index <- which(erroneus_data==data)
+  #   df[[variable]] <- recode(df[[variable]], data = correct_data[index])
+  # }
+
+  if (missing(conditional_variable) && missing(condition)) {
+      df[[variable]] <- recode(df[[variable]], erroneus_data = correct_data)
+      return(df)
+  } else if (!missing(df) && !missing(variable) && !missing(erroneus_data) && !missing(correct_data)){
+    filtered <- df[df[conditional_variable] == condition,]
+    filtered[[variable]] <- mapvalues(filtered[[variable]], from = erroneus_data, to = correct_data)
+    
+    not_filtered <- df[df[conditional_variable] != condition,]
+    
+    df<-rbind(filtered, not_filtered)
+    return(df)  
+  } else {
+    stop("Some argument is missing.")
+  }
+} 
 
 # function to export file
 exportFileLog <- function(df, log){
@@ -162,13 +187,15 @@ check_estrato_rim <- check_variable_with_master("ESTRATO_RIM")
 check_puerto <- check_variable_with_master("COD_PUERTO")
 check_arte <- check_variable_with_master("COD_ARTE")
 check_origen <- check_variable_with_master("COD_ORIGEN")
-check_procedencia <- check_variable_with_master("PROCEDENCIA")
+levels(check_origen$COD_ORIGEN)
+check_procedencia <- check_variable_with_master("COD_PROCEDENCIA")
 check_tipo_muestreo <- check_variable_with_master("COD_TIPO_MUESTREO")
 
 
-
-prueba <- correct_levels_in_variable(records, "ESTRATO_RIM", erroneus, correct)
-
+erroneus <- "OTB_DEF"
+correct <- "BACA_CN"
+prueba <- correct_levels_in_variable(records, "ESTRATO_RIM", "OTB_DEF", "baca", "ESTRATO_RIM")
+levels(prueba$ESTRATO_RIM)
 
 
 
