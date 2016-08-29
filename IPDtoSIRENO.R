@@ -56,6 +56,7 @@ YEAR <- "2016"
 ################################################################################
 
 LOG_FILE <- paste("LOG_", YEAR, "_", MONTH, ".csv", sep="")
+PATH_LOG_FILE <- file.path(paste(PATH_FILE, PATH_DATA, LOG_FILE, sep = "/"))
 
 PATH_ERRORS <- paste(PATH_FILE,"/errors",sep="")
 
@@ -73,27 +74,43 @@ BASE_FIELDS <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_TIPO_MU
 
 # #### FUNCTIONS ###############################################################
 
-
-
+#function to read operation code
+read_operation_code <- function(){
+  operation_code <- 0
+  if (file.exists(PATH_LOG_FILE)){
+    log_file <- read.csv(PATH_LOG_FILE)
+    index_operation_code <- as.numeric(length(log_file$OPERATION_CODE))
+    if (index_operation_code != 0){
+      operation_code <- log_file$OPERATION_CODE[index_operation_code]
+    }
+    rm(log_file)
+  } else {
+    operation_code <- 0
+  }
+  return(operation_code)
+}
 
 # function to create and/or update log file
 export_log_file <- function(action, variable, erroneus_data, correct_data, conditional_variable ="", condition =""){
   
-  #check if the file exists. If not, create it.
-  file_with_path <- file.path(paste(PATH_FILE, PATH_DATA, LOG_FILE, sep = "/"))
-  
-  if (!file.exists(file_with_path)){
-    header <- "ACTION,variable,ERRONEUS_DATA,CORRECT_DATA,CONDITIONAL_VARIABLE,CONDITIONDATE"
-    write(header, file_with_path)    
-  }
+
   
   #append data to file:
   date <- format(as.POSIXlt(Sys.time()), "%d-%m-%Y %H:%M:%S")
     #convert action to uppercase
     action <- toupper(action)
+    #obtain the operation code
+    operation_code <- read_operation_code() + 1
     
-  to_append <- paste(action, variable, erroneus_data, correct_data, conditional_variable, condition, date, sep = ",")
-  write(to_append, file_with_path, append = TRUE)
+  to_append <- paste(action, variable, erroneus_data, correct_data, conditional_variable, condition, operation_code, date, sep = ",")
+  
+  #check if the file exists. If not, create it.
+  if (!file.exists(PATH_LOG_FILE)){
+    header <- "ACTION,variable,ERRONEUS_DATA,CORRECT_DATA,CONDITIONAL_VARIABLE,CONDITION,OPERATION_CODE,DATE"
+    write(header, PATH_LOG_FILE)    
+  }
+  #and write:
+  write(to_append, PATH_LOG_FILE, append = TRUE)
   
 }
 
@@ -195,6 +212,7 @@ records <- import_IPD_file(paste(PATH_DATA,FILENAME, sep="/"))
 
 check_estrato_rim <- check_variable_with_master("ESTRATO_RIM")
 records <- correct_levels_in_variable(records, "ESTRATO_RIM", "OTB_DEF", "BACA_CN")
+records <- correct_levels_in_variable(records, "ESTRATO_RIM", "BACA_CN", "OTB_DEF")
 
 check_puerto <- check_variable_with_master("COD_PUERTO")
 check_arte <- check_variable_with_master("COD_ARTE")
