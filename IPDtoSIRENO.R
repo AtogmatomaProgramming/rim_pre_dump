@@ -55,8 +55,11 @@ MONTH <- 4
 YEAR <- "2016"
 ################################################################################
 
+MONTH <- sprintf("%02d", MONTH)
 LOG_FILE <- paste("LOG_", YEAR, "_", MONTH, ".csv", sep="")
 PATH_LOG_FILE <- file.path(paste(PATH_FILE, PATH_DATA, LOG_FILE, sep = "/"))
+
+PATH_BACKUP_FILE <- file.path(paste(PATH_FILE, PATH_DATA, "backup", sep = "/"))
 
 PATH_ERRORS <- paste(PATH_FILE,"/errors",sep="")
 
@@ -90,10 +93,16 @@ read_operation_code <- function(){
   return(operation_code)
 }
 
+# function to export file
+# create the file with the operation code
+export_file_to_sireno <- function(){
+  operation_code <- read_operation_code
+  filename <- paste(FILENAME, operation_code, sep="_")
+  write.csv(records, filename)
+}
+
 # function to create and/or update log file
 export_log_file <- function(action, variable, erroneus_data, correct_data, conditional_variable ="", condition =""){
-  
-
   
   #append data to file:
   date <- format(as.POSIXlt(Sys.time()), "%d-%m-%Y %H:%M:%S")
@@ -111,8 +120,8 @@ export_log_file <- function(action, variable, erroneus_data, correct_data, condi
   }
   #and write:
   write(to_append, PATH_LOG_FILE, append = TRUE)
-  
 }
+
 
 
 # function to ckeck variables.
@@ -171,6 +180,8 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
       df[[variable]] <- mapvalues(df[[variable]], from = erroneus_data, to = correct_data)
       # add to log file
       export_log_file("change", variable, erroneus_data, correct_data)
+      #export file
+      export_file_to_sireno()
       #return
       return(df)
   } else if (!missing(df) && !missing(variable) && !missing(erroneus_data) && !missing(correct_data)){
@@ -184,6 +195,8 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
       # add to log file
       error_text <- paste(erroneus_data, "from", conditional_variable, condition, sep=" ")
       export_log_file("change", variable, erroneus_data, correct_data, conditional_variable, condition)
+      #export file
+      export_file_to_sireno()
       # return
       return(df)  
   } else {
@@ -192,16 +205,7 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
 } 
 
 
-# function to export file
-exportFileLog <- function(df, log){
-  filename <- file_path_sans_ext(basename(FILENAME))
-  
-  MONTH <- sprintf("%02d", MONTH)
 
-  file = paste("samples_up", YEAR, MONTH, "LOG", log, sep="_")
-  write.csv(df, file)
-  exportLogFile (file)
-}
 
 # #### IMPORT FILE #############################################################
 records <- import_IPD_file(paste(PATH_DATA,FILENAME, sep="/"))
