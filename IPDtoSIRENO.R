@@ -96,9 +96,12 @@ read_operation_code <- function(){
 # function to export file
 # create the file with the operation code
 export_file_to_sireno <- function(){
-  operation_code <- read_operation_code
-  filename <- paste(FILENAME, operation_code, sep="_")
-  write.csv(records, filename)
+  operation_code <- read_operation_code()
+  filename <- file_path_sans_ext(FILENAME)
+  filename <- paste(filename, operation_code, sep="_")
+  filename <- paste(PATH_FILE, PATH_DATA, filename, sep="/")
+  filename <- paste(filename,  ".csv", sep="")
+  write.csv(records, filename, quote = FALSE, row.names = FALSE)
 }
 
 # function to create and/or update log file
@@ -171,10 +174,6 @@ check_variable_with_master <- function (variable){
 # conditional_variable: a vector of characters with the name of the conditional variable
 # condition: a vector of characters with the conditional value
 correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data, conditional_variable, condition) {
-  # for (data in erroneus_data) {
-  #   index <- which(erroneus_data==data)
-  #   df[[variable]] <- recode(df[[variable]], data = correct_data[index])
-  # }
 
   if (missing(conditional_variable) && missing(condition)) {
       df[[variable]] <- mapvalues(df[[variable]], from = erroneus_data, to = correct_data)
@@ -213,23 +212,42 @@ records <- import_IPD_file(paste(PATH_DATA,FILENAME, sep="/"))
 
 # #### START CHECK #############################################################
 
-
 check_estrato_rim <- check_variable_with_master("ESTRATO_RIM")
 records <- correct_levels_in_variable(records, "ESTRATO_RIM", "OTB_DEF", "BACA_CN")
-records <- correct_levels_in_variable(records, "ESTRATO_RIM", "BACA_CN", "OTB_DEF")
+
 
 check_puerto <- check_variable_with_master("COD_PUERTO")
+
 check_arte <- check_variable_with_master("COD_ARTE")
+records <- correct_levels_in_variable(records, "COD_ARTE", 200, 201, "ESTRATO_RIM", "BETA_CN")
+records <- correct_levels_in_variable(records, "COD_ARTE", 150, 102, "ESTRATO_RIM", "BACA_CN")
+records <- correct_levels_in_variable(records, "COD_ARTE", 150, 102, "ESTRATO_RIM", "JURELERA_CN")
+records <- correct_levels_in_variable(records, "COD_ARTE", 200, 202, "ESTRATO_RIM", "ENMALLE_AC")
+records <- correct_levels_in_variable(records, "COD_ARTE", 390, 302, "ESTRATO_RIM", "PALANGRE_AC")
+
 check_origen <- check_variable_with_master("COD_ORIGEN")
-levels(check_origen$COD_ORIGEN)
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "008", "COD_PUERTO", "0409") #Santoña VIIIc
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "009", "COD_PUERTO", "0904") #Cedeira VIIIc
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "009", "COD_PUERTO", "0907") #A Coruña VIIIc
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "031", "002", "COD_PUERTO", "0907") #A Coruña VIIc
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "005", "010", "COD_PUERTO", "0917") #Ribeira IXa
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "010", "COD_PUERTO", "0921") #Marín VIIIc
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "005", "010", "COD_PUERTO", "0921") #Marín IXa
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "009", "COD_PUERTO", "0925") #Burela IXa
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "008", "COD_PUERTO", "1417") #Gijón
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "008", "COD_PUERTO", "1418") #Avilés
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "065", "038", "COD_PUERTO", "1418") #Avilés Subáreas VI,VII, Divisiones VIIIabd
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "008", "COD_PUERTO", "1420") #Luarca
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "010", "COD_PUERTO", "0913") #Finisterre
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "010", "COD_PUERTO", "0914") #Muros
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "010", "COD_PUERTO", "0922") #Vigo
+records <- correct_levels_in_variable(records, "COD_ORIGEN", "065", "038", "COD_PUERTO", "0926") #Cillero
+
 check_procedencia <- check_variable_with_master("PROCEDENCIA")
+
 check_tipo_muestreo <- check_variable_with_master("COD_TIPO_MUE")
 
 
-erroneus <- "OTB_DEF"
-correct <- "BACA_CN"
-prueba <- correct_levels_in_variable(records, "COD_ORIGEN", "002", "111", "COD_PUERTO", "0907")
-levels(prueba$ESTRATO_RIM)
 
 
 
