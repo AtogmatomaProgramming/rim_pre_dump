@@ -66,10 +66,13 @@ PATH_ERRORS <- paste(PATH_FILE,"/errors",sep="")
 # #### RECOVERY DATA SETS ######################################################
 
 data(estrato_rim) #load the data set
-# estrato_rim <- estrato_rim
+estrato_rim <- estrato_rim
 
 data(puerto)
 # puerto <- puerto
+
+data(maestro_flota_sireno)
+data(cfpo2015)
 # #### CONSTANS ################################################################
 
 # list with the common fields used in all tables
@@ -77,7 +80,7 @@ BASE_FIELDS <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_TIPO_MU
 
 # #### FUNCTIONS ###############################################################
 
-#function to read operation code
+#function to read operation code if exists. If not, operation code = 0
 read_operation_code <- function(){
   operation_code <- 0
   if (file.exists(PATH_LOG_FILE)){
@@ -105,7 +108,7 @@ export_file_to_sireno <- function(){
 }
 
 # function to create and/or update log file
-export_log_file <- function(action, variable, erroneus_data, correct_data, conditional_variable ="", condition =""){
+export_log_file <- function(action, variable, erroneus_data="", correct_data="", conditional_variable ="", condition =""){
   
   #append data to file:
   date <- format(as.POSIXlt(Sys.time()), "%d-%m-%Y %H:%M:%S")
@@ -166,7 +169,8 @@ check_variable_with_master <- function (variable){
 
 
 
-# function to change the level in a variable of a dataframe:
+# function to change the level in a variable of a dataframe. Add record to Log file
+# and export file.
 # df: dataframe
 # variable: variable (column)
 # erroneus_data: a vector of characters with the erroneus factor
@@ -203,8 +207,83 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
   }
 } 
 
+# function to remove trip. Add record to Log file and export file.
+# It's imperative the next data to identify a trip:
+# date, cod_type_sample, cod_ship, cod_port, cod_gear, cod_origin and rim_stratum
+# df: dataframe
+# return: dataframe without the deleted trips
+remove_trip <- function(df, date, cod_type_sample, cod_ship, cod_port, cod_gear, cod_origin, rim_stratum){
+  df <- df[!(df["FECHA"]==date & df["COD_TIPO_MUE"] == cod_type_sample & df["COD_BARCO"] == cod_ship & df["COD_PUERTO"] == cod_port & df["COD_ARTE"] == cod_gear & df["COD_ORIGEN"] == cod_origin & df["ESTRATO_RIM"] == rim_stratum),]
+  return(df)
+  # add to log file
+  error_text <- paste(date, cod_type_sample, cod_ship, cod_port, cod_gear, cod_origin, rim_stratum, sep=" ")
+  export_log_file("remove trip", "trip", error_text)
+  #export file
+  export_file_to_sireno()
+  # return
+}
 
+# function to search duplicate samples by type of sample (between MT1 and MT2)
+# df: dataframe where find duplicate samples
+# returns a dataframe with duplicate samples
+check_duplicates_type_sample <- function(df){
+  mt1 <- df[df["COD_TIPO_MUE"]=="MT1A",c("COD_PUERTO","FECHA","COD_BARCO","ESTRATO_RIM")]
+  mt1 <- unique(mt1)
+  mt2 <- df[df["COD_TIPO_MUE"]=="MT2A",c("COD_PUERTO","FECHA","COD_BARCO","ESTRATO_RIM")]
+  mt2 <- unique(mt2)
+  
+  duplicated <- merge(x = mt1, y = mt2) 
+  
+  return(duplicated)
+}
 
+# function to search false mt2 samples: samples with COD_TIPO_MUE as MT2A and
+# without any lenght
+# df: dataframe
+# return: dataframe with erroneus samples
+check_false_mt2 <- function(df){
+  dataframe <- df
+  dataframe$FECHA <- as.POSIXct(dataframe$FECHA)
+  mt2_errors <- dataframe %>%
+    filter(COD_TIPO_MUE=="MT2A") %>%
+    group_by(COD_PUERTO, FECHA, COD_BARCO, ESTRATO_RIM) %>%
+    summarise(summatory = sum(EJEM_MEDIDOS)) %>%
+    filter(summatory == 0)
+  
+  return(mt2_errors)
+}
+
+# function to search false mt1 samples: samples with COD_TIPO_MUE as MT1A and
+# lenghts
+# df: dataframe
+# return: dataframe with erroneus samples
+check_false_mt1 <- function(df){
+  dataframe <- df
+  dataframe$FECHA <- as.POSIXct(dataframe$FECHA)
+  mt1_errors <- dataframe %>%
+    filter(COD_TIPO_MUE=="MT1A") %>%
+    group_by(COD_PUERTO, FECHA, COD_BARCO, ESTRATO_RIM) %>%
+    summarise(summatory = sum(EJEM_MEDIDOS)) %>%
+    filter(summatory != 0)
+  
+  return(mt1_errors)
+}
+
+# function to search foreing ships
+# the BAR_COD code in the foreing ships begins with an 8 and continue with 5 digits
+# df: dataframe
+# return: dataframe with foreing ships and COD_TIPO_MUE
+check_foreing_ship <- function(df){
+  dataframe <- df
+  dataframe$FECHA <- as.POSIXct(dataframe$FECHA)
+  dataframe$COD_BARCO <- as.character(dataframe$COD_BARCO)
+  ships <- dataframe %>%
+    filter(grepl("^8\\d{5}",COD_BARCO)) %>%
+    group_by(FECHA, COD_TIPO_MUE, COD_BARCO, COD_PUERTO, COD_ARTE, COD_ORIGEN, ESTRATO_RIM) %>%
+    count(FECHA, COD_TIPO_MUE, COD_BARCO, COD_PUERTO, COD_ARTE, COD_ORIGEN, ESTRATO_RIM)
+  
+  return(ships[, c("FECHA", "COD_TIPO_MUE", "COD_BARCO", "COD_PUERTO", "COD_ARTE", "COD_ORIGEN", "ESTRATO_RIM")])
+}
 
 # #### IMPORT FILE #############################################################
 records <- import_IPD_file(paste(PATH_DATA,FILENAME, sep="/"))
@@ -247,7 +326,41 @@ check_procedencia <- check_variable_with_master("PROCEDENCIA")
 
 check_tipo_muestreo <- check_variable_with_master("COD_TIPO_MUE")
 
+check_duplicados_tipo_muestreo <- check_duplicates_type_sample(records)
+
+check_falsos_mt2 <- check_false_mt2(records)
+
+check_falsos_mt1 <- check_false_mt1(records)
+
+barcos_extranjeros <- check_foreing_ship(records)
+
+prueba <- remove_trip(records, "2016-04-29", "MT1A", "800390", "0907", "102", "003", "BACA_CN")
 
 
+
+
+
+# ---- search errors in ships
+##### TO DO: ADD CHECKING WITH SIRENO FILES
+ships <- as.data.frame(unique(records[,c("COD_BARCO" )]))
+colnames(ships) <- "COD_BARCO"
+ships_sireno <- merge(x=ships, y=maestro_flota_sireno, by.x = "COD_BARCO", by.y = "BARCOD", all.x = TRUE)
+ships_cfpo <- merge (x = ships_sireno, y = cfpo2015, by.x = "BARCODSECR", by.y = "CODIGO_BUQUE", all.x = TRUE)
+ships_errors <- filter(ships_cfpo, ESTADO!="ALTA DEFINITIVA")
+
+filter(maestro_flota_sireno, BARCOD == "200584")
+
+
+#ships withouth coincidences in cfpo
+errors_ships_not_in_cfpo <- subset(errors_ships, is.na(errors_ships$ESTADO))
+errors_ships_not_in_cfpo <- errors_ships_not_in_cfpo[, c(BASE_FIELDS, "CODSGPM", "ESTADO")]
+errors_ships_not_in_cfpo <- arrange_(errors_ships_not_in_cfpo, BASE_FIELDS)
+ERRORS$errors_ships_not_in_cfpo <- errors_ships_not_in_cfpo
+
+#ships with state different to "alta definitiva"
+errors_ships_not_registered <- subset(errors_ships, ESTADO != "ALTA DEFINITIVA")
+errors_ships_not_registered <- errors_ships_not_registered[, c(BASE_FIELDS, "CODSGPM", "ESTADO")]
+errors_ships_not_registered <- arrange_(errors_ships_not_registered, BASE_FIELDS)
+ERRORS$errors_ships_not_registered <- errors_ships_not_registered
 
 
