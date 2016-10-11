@@ -49,8 +49,8 @@ MESSAGE_ERRORS<- list() #list with the errors
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES:
 PATH_FILE <- "F:/misdoc/sap/IPDtoSIRENO"
 PATH_DATA<- "/data"
-FILENAME <- "muestreos_especie_4_2016_todos_ANADIDOS_ERRORES.txt"
-#FILENAME <- "muestreos_especie_4_2016_todos_.txt"
+#FILENAME <- "muestreos_especie_4_2016_todos_ANADIDOS_ERRORES.txt"
+FILENAME <- "muestreos_especie_4_2016_todos_.txt"
 MONTH <- 4
 YEAR <- "2016"
 ################################################################################
@@ -66,15 +66,14 @@ PATH_ERRORS <- paste(PATH_FILE,"/errors",sep="")
 # #### RECOVERY DATA SETS ######################################################
 
 data(estrato_rim) #load the data set
-estrato_rim <- estrato_rim
-
+#estrato_rim <- estrato_rim
 data(puerto)
 # puerto <- puerto
-
 data(maestro_flota_sireno)
 data(cfpo2015)
 data(especies_mezcla)
 data(especies_no_mezcla)
+
 # #### CONSTANS ################################################################
 
 # list with the common fields used in all tables
@@ -226,6 +225,18 @@ remove_trip <- function(df, date, cod_type_sample, cod_ship, cod_port, cod_gear,
   return(df)
 }
 
+# function to check the month: Check if all the data in the dataframer belongs to
+# the same month, allocated in MONTH variable
+# df: dataframe to check
+# return a dataframe with the samples of incorrect month
+check_month <- function(df){
+  df$months <- sapply (df["FECHA"], function(x){format(x, "%m")})
+  erroneus_months <- as.data.frame(unique(df$months))
+  erroneus_months <- erroneus_months %>%
+    filter(FECHA != MONTH)
+  erroneus_samples <- merge(x = df, y = erroneus_months, by.x = "months", by.y = "FECHA", all.y = TRUE)
+  return(erroneus_samples)
+}
 
 # function to search duplicate samples by type of sample (between MT1 and MT2)
 # df: dataframe where find duplicate samples
@@ -319,6 +330,9 @@ records <- import_IPD_file(paste(PATH_DATA,FILENAME, sep="/"))
 
 # #### START CHECK #############################################################
 
+check_mes <- check_month(records)
+
+
 check_estrato_rim <- check_variable_with_master("ESTRATO_RIM")
 records <- correct_levels_in_variable(records, "ESTRATO_RIM", "OTB_DEF", "BACA_CN")
 
@@ -332,6 +346,7 @@ records <- correct_levels_in_variable(records, "COD_ARTE", 150, 102, "ESTRATO_RI
 records <- correct_levels_in_variable(records, "COD_ARTE", 150, 102, "ESTRATO_RIM", "JURELERA_CN")
 records <- correct_levels_in_variable(records, "COD_ARTE", 200, 202, "ESTRATO_RIM", "ENMALLE_AC")
 records <- correct_levels_in_variable(records, "COD_ARTE", 390, 302, "ESTRATO_RIM", "PALANGRE_AC")
+records <- correct_levels_in_variable(records, "COD_ARTE", 200, 202, "ESTRATO_RIM", "VOLANTA_CN")
 
 
 check_origen <- check_variable_with_master("COD_ORIGEN")
@@ -376,6 +391,8 @@ records <- remove_trip(records, "2016-04-19","MT1A","800418","0926","202","038",
 records <- remove_trip(records, "2016-04-29","MT1A","800378","0907","102","009","BACA_CN")
 records <- remove_trip(records, "2016-04-29","MT1A","800390","0907","102","009","BACA_CN")
 
+
 check_especies_mezcla_no_mezcla <- check_mixed_as_no_mixed(records)
+
 
 check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
