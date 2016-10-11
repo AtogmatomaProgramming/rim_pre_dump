@@ -49,8 +49,8 @@ MESSAGE_ERRORS<- list() #list with the errors
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES:
 PATH_FILE <- "F:/misdoc/sap/IPDtoSIRENO"
 PATH_DATA<- "/data"
-#FILENAME <- "muestreos_especie_4_2016_todos_ANADIDOS_ERRORES.txt"
-FILENAME <- "muestreos_especie_4_2016_todos_.txt"
+FILENAME <- "muestreos_especie_4_2016_todos_ANADIDOS_ERRORES.txt"
+#FILENAME <- "muestreos_especie_4_2016_todos_.txt"
 MONTH <- 4
 YEAR <- "2016"
 ################################################################################
@@ -73,6 +73,8 @@ data(puerto)
 
 data(maestro_flota_sireno)
 data(cfpo2015)
+data(especies_mezcla)
+data(especies_no_mezcla)
 # #### CONSTANS ################################################################
 
 # list with the common fields used in all tables
@@ -214,14 +216,16 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
 # return: dataframe without the deleted trips
 remove_trip <- function(df, date, cod_type_sample, cod_ship, cod_port, cod_gear, cod_origin, rim_stratum){
   df <- df[!(df["FECHA"]==date & df["COD_TIPO_MUE"] == cod_type_sample & df["COD_BARCO"] == cod_ship & df["COD_PUERTO"] == cod_port & df["COD_ARTE"] == cod_gear & df["COD_ORIGEN"] == cod_origin & df["ESTRATO_RIM"] == rim_stratum),]
-  return(df)
+  
   # add to log file
   error_text <- paste(date, cod_type_sample, cod_ship, cod_port, cod_gear, cod_origin, rim_stratum, sep=" ")
   export_log_file("remove trip", "trip", error_text)
   #export file
   export_file_to_sireno()
   # return
+  return(df)
 }
+
 
 # function to search duplicate samples by type of sample (between MT1 and MT2)
 # df: dataframe where find duplicate samples
@@ -285,6 +289,30 @@ check_foreing_ship <- function(df){
   return(ships[, c("FECHA", "COD_TIPO_MUE", "COD_BARCO", "COD_PUERTO", "COD_ARTE", "COD_ORIGEN", "ESTRATO_RIM")])
 }
 
+# TODO: function to search ships not active
+# ships <- as.data.frame(unique(records[,c("COD_BARCO" )]))
+# colnames(ships) <- "COD_BARCO"
+# ships_sireno <- merge(x=ships, y=maestro_flota_sireno, by.x = "COD_BARCO", by.y = "BARCOD", all.x = TRUE)
+
+# function to check mixed species keyed as non mixed species: in COD_ESP_MUE
+# there are codes from mixed species 
+# df: dataframe
+# return a dataframe with the samples with species keyed as non mixed species
+check_mixed_as_no_mixed <- function(df){
+  non_mixed <- merge(x=df, y=especies_mezcla["COD_ESP_CAT"], by.x = "COD_ESP_MUE", by.y = "COD_ESP_CAT")
+  return(non_mixed)
+}
+
+# function to check no mixed species keyed as mixed species: in COD_ESP_MUE
+# there are codes from mixed species 
+# df: dataframe
+# return a dataframe with the samples with species keyed as non mixed species
+check_no_mixed_as_mixed <- function(df){
+  non_mixed <- merge(x=records, y=especies_no_mezcla["COD_ESP"], by.x = "COD_ESP_MUE", by.y = "COD_ESP")
+  return(non_mixed)
+}
+
+
 # #### IMPORT FILE #############################################################
 records <- import_IPD_file(paste(PATH_DATA,FILENAME, sep="/"))
 
@@ -297,12 +325,14 @@ records <- correct_levels_in_variable(records, "ESTRATO_RIM", "OTB_DEF", "BACA_C
 
 check_puerto <- check_variable_with_master("COD_PUERTO")
 
+
 check_arte <- check_variable_with_master("COD_ARTE")
 records <- correct_levels_in_variable(records, "COD_ARTE", 200, 201, "ESTRATO_RIM", "BETA_CN")
 records <- correct_levels_in_variable(records, "COD_ARTE", 150, 102, "ESTRATO_RIM", "BACA_CN")
 records <- correct_levels_in_variable(records, "COD_ARTE", 150, 102, "ESTRATO_RIM", "JURELERA_CN")
 records <- correct_levels_in_variable(records, "COD_ARTE", 200, 202, "ESTRATO_RIM", "ENMALLE_AC")
 records <- correct_levels_in_variable(records, "COD_ARTE", 390, 302, "ESTRATO_RIM", "PALANGRE_AC")
+
 
 check_origen <- check_variable_with_master("COD_ORIGEN")
 records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "008", "COD_PUERTO", "0409") #Santoña VIIIc
@@ -322,45 +352,30 @@ records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "010", "COD_
 records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "010", "COD_PUERTO", "0922") #Vigo
 records <- correct_levels_in_variable(records, "COD_ORIGEN", "065", "038", "COD_PUERTO", "0926") #Cillero
 
+
 check_procedencia <- check_variable_with_master("PROCEDENCIA")
+
 
 check_tipo_muestreo <- check_variable_with_master("COD_TIPO_MUE")
 
+
 check_duplicados_tipo_muestreo <- check_duplicates_type_sample(records)
+
 
 check_falsos_mt2 <- check_false_mt2(records)
 
+
 check_falsos_mt1 <- check_false_mt1(records)
 
-barcos_extranjeros <- check_foreing_ship(records)
 
-prueba <- remove_trip(records, "2016-04-29", "MT1A", "800390", "0907", "102", "003", "BACA_CN")
+check_barcos_extranjeros <- check_foreing_ship(records)
+records <- remove_trip(records, "2016-04-07","MT1A","800215","1418","102","008","JURELERA_CN")
+records <- remove_trip(records, "2016-04-14","MT1A","800378","0907","102","009","BACA_CN")
+records <- remove_trip(records, "2016-04-18","MT1A","800293","0926","302","038","PALANGRE_AC")
+records <- remove_trip(records, "2016-04-19","MT1A","800418","0926","202","038","ENMALLE_AC")
+records <- remove_trip(records, "2016-04-29","MT1A","800378","0907","102","009","BACA_CN")
+records <- remove_trip(records, "2016-04-29","MT1A","800390","0907","102","009","BACA_CN")
 
+check_especies_mezcla_no_mezcla <- check_mixed_as_no_mixed(records)
 
-
-
-
-# ---- search errors in ships
-##### TO DO: ADD CHECKING WITH SIRENO FILES
-ships <- as.data.frame(unique(records[,c("COD_BARCO" )]))
-colnames(ships) <- "COD_BARCO"
-ships_sireno <- merge(x=ships, y=maestro_flota_sireno, by.x = "COD_BARCO", by.y = "BARCOD", all.x = TRUE)
-ships_cfpo <- merge (x = ships_sireno, y = cfpo2015, by.x = "BARCODSECR", by.y = "CODIGO_BUQUE", all.x = TRUE)
-ships_errors <- filter(ships_cfpo, ESTADO!="ALTA DEFINITIVA")
-
-filter(maestro_flota_sireno, BARCOD == "200584")
-
-
-#ships withouth coincidences in cfpo
-errors_ships_not_in_cfpo <- subset(errors_ships, is.na(errors_ships$ESTADO))
-errors_ships_not_in_cfpo <- errors_ships_not_in_cfpo[, c(BASE_FIELDS, "CODSGPM", "ESTADO")]
-errors_ships_not_in_cfpo <- arrange_(errors_ships_not_in_cfpo, BASE_FIELDS)
-ERRORS$errors_ships_not_in_cfpo <- errors_ships_not_in_cfpo
-
-#ships with state different to "alta definitiva"
-errors_ships_not_registered <- subset(errors_ships, ESTADO != "ALTA DEFINITIVA")
-errors_ships_not_registered <- errors_ships_not_registered[, c(BASE_FIELDS, "CODSGPM", "ESTADO")]
-errors_ships_not_registered <- arrange_(errors_ships_not_registered, BASE_FIELDS)
-ERRORS$errors_ships_not_registered <- errors_ships_not_registered
-
-
+check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
