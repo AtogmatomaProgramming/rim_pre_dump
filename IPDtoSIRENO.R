@@ -27,6 +27,10 @@ library(devtools) # Need this package to use install and install_github
   #install_github("Eucrow/sapmuebase") # Make sure this is the last version
 
 library(sapmuebase) # and load the library
+  
+  # ---- install openxlsx
+  #install.packages("openxlsx")
+library(openxlsx)
 
 #initial_wd <- getwd()
 #setwd("F:/misdoc/sap")
@@ -323,6 +327,23 @@ check_no_mixed_as_mixed <- function(df){
   return(non_mixed)
 }
 
+# function to export file to excel.
+# if this error is returned:
+#    Error: zipping up workbook failed. Please make sure Rtools is installed or a zip application is available to R.
+#    Try installr::install.rtools() on Windows.
+# run:Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
+# source: https://github.com/awalker89/openxlsx/issues/111
+
+export_to_excel <- function(df){
+  month_in_spanish <- c("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
+  filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH)], "_2016.xlsx", sep="")
+  filepath = paste(PATH_FILE, PATH_DATA, sep="")
+  filepath = paste(filepath, filename, sep = "/")
+  colnames(df) <- c("FECHA","PUERTO","BUQUE","ARTE","ORIGEN","METIER","PROYECTO","TIPO MUESTREO","NRECHAZOS","NBARCOS MUESTREADOS","CUADRICULA","LAT DECIMAL","LON DECIMAL","DIAS_MAR","PESO_TOTAL","COD_ESP_TAX","TIPO_MUESTREO","PROCEDENCIA","COD_CATEGORIA","PESO","COD_ESP_MUE","SEXO","PESO MUESTRA","MEDIDA","TALLA","NEJEMPLARES","COD_PUERTO_DESCARGA")
+  df[["FECHA"]] <- as.character(df[["FECHA"]]) #it's mandatory convert date to character. I don't know why.
+  write.xlsx(df, filepath, keepNA=TRUE, colnames=TRUE)
+}
+
 
 # #### IMPORT FILE #############################################################
 records <- import_IPD_file(paste(PATH_DATA,FILENAME, sep="/"))
@@ -396,3 +417,17 @@ check_especies_mezcla_no_mezcla <- check_mixed_as_no_mixed(records)
 
 
 check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
+
+
+# source: https://github.com/awalker89/openxlsx/issues/111
+Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
+export_to_excel(records)
+
+
+
+
+
+
+
+
+
