@@ -54,8 +54,8 @@ MESSAGE_ERRORS<- list() #list with the errors
 PATH_FILE <- "F:/misdoc/sap/IPDtoSIRENO"
 PATH_DATA<- "/data"
 #FILENAME <- "muestreos_especie_4_2016_todos_ANADIDOS_ERRORES.txt"
-FILENAME <- "muestreos_especie_4_2016_todos_.txt"
-MONTH <- 4
+FILENAME <- "muestreos_especie_5_2016_todos_.txt"
+MONTH <- 5
 YEAR <- "2016"
 ################################################################################
 
@@ -77,6 +77,7 @@ data(maestro_flota_sireno)
 data(cfpo2015)
 data(especies_mezcla)
 data(especies_no_mezcla)
+data(maestro_categorias)
 
 # #### CONSTANS ################################################################
 
@@ -134,11 +135,15 @@ export_log_file <- function(action, variable, erroneus_data="", correct_data="",
 }
 
 
-
-# function to ckeck variables.
-# It's only available for variables with a data source (master): ESTRATO_RIM, COD_PUERTO,
-# COD_ORIGEN, COD_ARTE, COD_PROCEDENCIA and TIPO_MUESTREO
-# return a dataframe with samples with the erroneus variables
+# ---- function to ckeck variables ---------------------------------------------
+#' Check variables
+# 
+#' Check if the value of variables are consistents to the value in its SIRENO master.
+#' It's only available for variables with a data source (master): ESTRATO_RIM, COD_PUERTO,
+#' COD_ORIGEN, COD_ARTE, COD_PROCEDENCIA and TIPO_MUESTREO
+#' @param variable: one of this values: ESTRATO_RIM, COD_PUERTO, COD_ORIGEN,
+#' COD_ARTE, COD_PROCEDENCIA or TIPO_MUESTREO
+#' @return Return a dataframe with samples containing erroneus variables
 check_variable_with_master <- function (variable){
 
   if(variable != "ESTRATO_RIM" &&
@@ -173,15 +178,18 @@ check_variable_with_master <- function (variable){
 }
 
 
-
-# function to change the level in a variable of a dataframe. Add record to Log file
-# and export file.
-# df: dataframe
-# variable: variable (column)
-# erroneus_data: a vector of characters with the erroneus factor
-# correct_data: a vector of characters with its correct factor
-# conditional_variable: a vector of characters with the name of the conditional variable
-# condition: a vector of characters with the conditional value
+# ---- Change levels in a variable of a dataframe ---------------------------------------------
+#' Change levels
+#' 
+#' function to change levels in a variable of a dataframe. Add record to Log file
+#' and export file.
+#' @param df: dataframe
+#' @param variable: variable (column)
+#' @param erroneus_data: a vector of characters with the erroneus factor
+#' @param correct_data: a vector of characters with its correct factor
+#' @param conditional_variable: a vector of characters with the name of the conditional variable
+#' @param condition: a vector of characters with the conditional value
+#' @return dataframe with levels changed
 correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data, conditional_variable, condition) {
 
   if (missing(conditional_variable) && missing(condition)) {
@@ -212,6 +220,7 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
   }
 } 
 
+
 # function to remove trip. Add record to Log file and export file.
 # It's imperative the next data to identify a trip:
 # date, cod_type_sample, cod_ship, cod_port, cod_gear, cod_origin and rim_stratum
@@ -241,6 +250,16 @@ check_month <- function(df){
   erroneus_samples <- merge(x = df, y = erroneus_months, by.x = "months", by.y = "FECHA", all.y = TRUE)
   return(erroneus_samples)
 }
+
+
+# function to check the type of sample.
+# df: dataframe to check
+# return samples with TIPO_MUE != to "CONCURRENTE EN LONJA"
+check_type_sample <- function(df){
+  errors <- df[df[["TIPO_MUE"]]!="CONCURRENTE EN LONJA",]
+  return(errors)
+}
+
 
 # function to search duplicate samples by type of sample (between MT1 and MT2)
 # df: dataframe where find duplicate samples
@@ -327,6 +346,25 @@ check_no_mixed_as_mixed <- function(df){
   return(non_mixed)
 }
 
+
+# function to check if the categories in the IPD file are in the categories master of the SIRENO
+# df: dataframe
+# return: dataframe of samples with erroneus categories
+check_categories <- function(df){
+  
+  maestro_categorias[["TRACK"]] <- "OK"
+  df[["FECHA"]]<-as.POSIXct(df[["FECHA"]])
+  errors <- merge(x = df, y = maestro_categorias, by.x = c("COD_PUERTO", "COD_ESP_MUE", "COD_CATEGORIA"), by.y = c("PUECOD", "ESPCOD", "ESPCAT"), all.x = TRUE)
+  errors <- errors %>% 
+    filter(is.na(TRACK)) %>%
+    select(COD_PUERTO, FECHA, COD_BARCO, COD_ESP_MUE, COD_CATEGORIA) %>%
+    arrange(COD_PUERTO, FECHA, COD_BARCO, COD_ESP_MUE, COD_CATEGORIA)
+  errors <- unique(errors)
+  
+  
+  return (errors)
+}
+
 # function to export file to excel.
 # if this error is returned:
 #    Error: zipping up workbook failed. Please make sure Rtools is installed or a zip application is available to R.
@@ -336,6 +374,10 @@ check_no_mixed_as_mixed <- function(df){
 
 export_to_excel <- function(df){
   month_in_spanish <- c("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
+  
+  # TODO: add this to import_IPD_file in sapmuebase
+  df[["FECHA"]] <- format(df[["FECHA"]], "%d/%m/%Y")
+  
   filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH)], "_2016.xlsx", sep="")
   filepath = paste(PATH_FILE, PATH_DATA, sep="")
   filepath = paste(filepath, filename, sep = "/")
@@ -348,51 +390,30 @@ export_to_excel <- function(df){
 # #### IMPORT FILE #############################################################
 records <- import_IPD_file(paste(PATH_DATA,FILENAME, sep="/"))
 
-
 # #### START CHECK #############################################################
 
 check_mes <- check_month(records)
 
 
 check_estrato_rim <- check_variable_with_master("ESTRATO_RIM")
-records <- correct_levels_in_variable(records, "ESTRATO_RIM", "OTB_DEF", "BACA_CN")
 
 
 check_puerto <- check_variable_with_master("COD_PUERTO")
 
 
 check_arte <- check_variable_with_master("COD_ARTE")
-records <- correct_levels_in_variable(records, "COD_ARTE", 200, 201, "ESTRATO_RIM", "BETA_CN")
-records <- correct_levels_in_variable(records, "COD_ARTE", 150, 102, "ESTRATO_RIM", "BACA_CN")
-records <- correct_levels_in_variable(records, "COD_ARTE", 150, 102, "ESTRATO_RIM", "JURELERA_CN")
-records <- correct_levels_in_variable(records, "COD_ARTE", 200, 202, "ESTRATO_RIM", "ENMALLE_AC")
-records <- correct_levels_in_variable(records, "COD_ARTE", 390, 302, "ESTRATO_RIM", "PALANGRE_AC")
-records <- correct_levels_in_variable(records, "COD_ARTE", 200, 202, "ESTRATO_RIM", "VOLANTA_CN")
 
 
 check_origen <- check_variable_with_master("COD_ORIGEN")
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "008", "COD_PUERTO", "0409") #Santoña VIIIc
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "009", "COD_PUERTO", "0904") #Cedeira VIIIc
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "009", "COD_PUERTO", "0907") #A Coruña VIIIc
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "031", "002", "COD_PUERTO", "0907") #A Coruña VIIc
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "005", "010", "COD_PUERTO", "0917") #Ribeira IXa
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "010", "COD_PUERTO", "0921") #Marín VIIIc
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "005", "010", "COD_PUERTO", "0921") #Marín IXa
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "009", "COD_PUERTO", "0925") #Burela IXa
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "008", "COD_PUERTO", "1417") #Gijón
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "008", "COD_PUERTO", "1418") #Avilés
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "065", "038", "COD_PUERTO", "1418") #Avilés Subáreas VI,VII, Divisiones VIIIabd
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "008", "COD_PUERTO", "1420") #Luarca
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "010", "COD_PUERTO", "0913") #Finisterre
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "010", "COD_PUERTO", "0914") #Muros
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "003", "010", "COD_PUERTO", "0922") #Vigo
-records <- correct_levels_in_variable(records, "COD_ORIGEN", "065", "038", "COD_PUERTO", "0926") #Cillero
 
 
 check_procedencia <- check_variable_with_master("PROCEDENCIA")
 
 
 check_tipo_muestreo <- check_variable_with_master("COD_TIPO_MUE")
+
+# TODO: add check_type_sample to check_variable_with_master
+check_nombre_tipo_muestreo <- check_type_sample(records)
 
 
 check_duplicados_tipo_muestreo <- check_duplicates_type_sample(records)
@@ -405,12 +426,6 @@ check_falsos_mt1 <- check_false_mt1(records)
 
 
 check_barcos_extranjeros <- check_foreing_ship(records)
-records <- remove_trip(records, "2016-04-07","MT1A","800215","1418","102","008","JURELERA_CN")
-records <- remove_trip(records, "2016-04-14","MT1A","800378","0907","102","009","BACA_CN")
-records <- remove_trip(records, "2016-04-18","MT1A","800293","0926","302","038","PALANGRE_AC")
-records <- remove_trip(records, "2016-04-19","MT1A","800418","0926","202","038","ENMALLE_AC")
-records <- remove_trip(records, "2016-04-29","MT1A","800378","0907","102","009","BACA_CN")
-records <- remove_trip(records, "2016-04-29","MT1A","800390","0907","102","009","BACA_CN")
 
 
 check_especies_mezcla_no_mezcla <- check_mixed_as_no_mixed(records)
@@ -419,15 +434,11 @@ check_especies_mezcla_no_mezcla <- check_mixed_as_no_mixed(records)
 check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 
+check_categorias <- check_categories(records)
+
+
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
 export_to_excel(records)
-
-
-
-
-
-
-
 
 
