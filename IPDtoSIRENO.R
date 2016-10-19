@@ -190,9 +190,9 @@ check_variable_with_master <- function (variable){
 #' @param conditional_variable: a vector of characters with the name of the conditional variable
 #' @param condition: a vector of characters with the conditional value
 #' @return dataframe with levels changed
-correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data, conditional_variable, condition) {
+correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data, conditional_variables, conditions) {
 
-  if (missing(conditional_variable) && missing(condition)) {
+  if (missing(conditional_variables) && missing(conditions)) {
       df[[variable]] <- mapvalues(df[[variable]], from = erroneus_data, to = correct_data)
       # add to log file
       export_log_file("change", variable, erroneus_data, correct_data)
@@ -201,19 +201,53 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
       #return
       return(df)
   } else if (!missing(df) && !missing(variable) && !missing(erroneus_data) && !missing(correct_data)){
-      filtered <- df[df[conditional_variable] == condition,]
-      filtered[[variable]] <- mapvalues(filtered[[variable]], from = erroneus_data, to = correct_data)
+    # TODO: check if conditional_variables and conditiosn are lists
+      data <- df
       
-      not_filtered <- df[df[conditional_variable] != condition,]
+      for (i in 1:length(conditional_variables)) {
+        data <- data[data[conditional_variables[i]]==conditions[i],]
+      }
       
-      df<-rbind(filtered, not_filtered)
+      index_row_to_change <- which(data[[variable]]==erroneus_data)
+      row_names<-row.names(data[index_row_to_change,])
+      row_to_change <- df[row_names,]
+      levels_in_df <- levels(df[[variable]])
+      # check if the levels exists in df ...
+      if (!(correct_data %in% levels_in_df)){ #if not ...
+        levels(df[[variable]]) <- c(levels(df[[variable]]), correct_data) # ... add it
+      }
       
-      # add to log file
-      error_text <- paste(erroneus_data, "from", conditional_variable, condition, sep=" ")
-      export_log_file("change", variable, erroneus_data, correct_data, conditional_variable, condition)
-      #export file
-      export_file_to_sireno()
-      # return
+      row_to_change[variable] <- correct_data
+      df[index_row_to_change,] <- row_to_change
+      
+      
+      
+      
+      # for (i in 1:length(conditional_variables)) {
+      #   filtered <- filtered[filtered[conditional_variables[i]]==conditions[i],]
+      # }
+      # 
+      # row_to_change <- which(filtered[[variable]]==erroneus_data)
+      # df[row_to_change, variable == erroneus_data] <- correct_data
+      
+      
+      
+      
+      #filtered[[variable]] <- mapvalues(filtered[[variable]], from = erroneus_data, to = correct_data)
+      
+      # not_filtered <- df
+      # for (i in 1:length(conditional_variables)) {
+      #   not_filtered <- not_filtered[not_filtered[conditional_variables[i]]!=conditions[i],]
+      # }
+      # 
+      # df<-rbind(filtered, not_filtered)
+      # 
+      # # add to log file
+      # error_text <- paste(erroneus_data, "from", conditional_variables, conditions, sep=" ")
+      # export_log_file("change", variable, erroneus_data, correct_data, conditional_variables, conditions)
+      # #export file
+      # export_file_to_sireno()
+      # # return
       return(df)  
   } else {
     stop("Some argument is missing.")
@@ -435,6 +469,20 @@ check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 
 check_categorias <- check_categories(records)
+
+
+#records[records$COD_PUERTO=="0907" & records$FECHA=="2016-05-13" & records$COD_BARCO=="016780" & records$COD_ESP_MUE=="30156" & records$COD_CATEGORIA=="0905","COD_CATEGORIA"] <- as.factor("0902")
+
+conditional_variables <- c("COD_PUERTO", "FECHA", "COD_BARCO", "COD_ESP_MUE")
+conditions <- c("0907", "2016-05-13", "016780", "30156")
+
+records <- correct_levels_in_variable(records,"COD_CATEGORIA","0905", "0902", conditional_variables, conditions)
+
+0907
+2016-05-13
+016780
+30156
+0905
 
 
 # source: https://github.com/awalker89/openxlsx/issues/111
