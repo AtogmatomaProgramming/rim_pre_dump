@@ -184,12 +184,12 @@ check_variable_with_master <- function (variable){
 #' function to change levels in a variable of a dataframe. Add record to Log file
 #' and export file.
 #' @param df: dataframe
-#' @param variable: variable (column)
-#' @param erroneus_data: a vector of characters with the erroneus factor
-#' @param correct_data: a vector of characters with its correct factor
-#' @param conditional_variable: a vector of characters with the name of the conditional variable
-#' @param condition: a vector of characters with the conditional value
-#' @return dataframe with levels changed
+#' @param variable: variable name (column)
+#' @param erroneus_data: the erroneus value to change
+#' @param correct_data: the correct value
+#' @param conditional_variables: a vector of characters with the name of the conditional variables
+#' @param conditions: a vector of characters with the conditional values, whith the same lenght that conditional_variables
+#' @return dataframe corrected
 correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data, conditional_variables, conditions) {
 
   if (missing(conditional_variables) && missing(conditions)) {
@@ -201,7 +201,7 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
       #return
       return(df)
   } else if (!missing(df) && !missing(variable) && !missing(erroneus_data) && !missing(correct_data)){
-    # TODO: check if conditional_variables and conditiosn are lists
+    # TODO: check if conditional_variables and conditiosn are lists??
       data <- df
       
       for (i in 1:length(conditional_variables)) {
@@ -218,36 +218,8 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
       }
       
       row_to_change[variable] <- correct_data
-      df[index_row_to_change,] <- row_to_change
-      
-      
-      
-      
-      # for (i in 1:length(conditional_variables)) {
-      #   filtered <- filtered[filtered[conditional_variables[i]]==conditions[i],]
-      # }
-      # 
-      # row_to_change <- which(filtered[[variable]]==erroneus_data)
-      # df[row_to_change, variable == erroneus_data] <- correct_data
-      
-      
-      
-      
-      #filtered[[variable]] <- mapvalues(filtered[[variable]], from = erroneus_data, to = correct_data)
-      
-      # not_filtered <- df
-      # for (i in 1:length(conditional_variables)) {
-      #   not_filtered <- not_filtered[not_filtered[conditional_variables[i]]!=conditions[i],]
-      # }
-      # 
-      # df<-rbind(filtered, not_filtered)
-      # 
-      # # add to log file
-      # error_text <- paste(erroneus_data, "from", conditional_variables, conditions, sep=" ")
-      # export_log_file("change", variable, erroneus_data, correct_data, conditional_variables, conditions)
-      # #export file
-      # export_file_to_sireno()
-      # # return
+      df[row.names(df)==row_names,] <- row_to_change
+
       return(df)  
   } else {
     stop("Some argument is missing.")
@@ -469,20 +441,6 @@ check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 
 check_categorias <- check_categories(records)
-
-
-#records[records$COD_PUERTO=="0907" & records$FECHA=="2016-05-13" & records$COD_BARCO=="016780" & records$COD_ESP_MUE=="30156" & records$COD_CATEGORIA=="0905","COD_CATEGORIA"] <- as.factor("0902")
-
-conditional_variables <- c("COD_PUERTO", "FECHA", "COD_BARCO", "COD_ESP_MUE")
-conditions <- c("0907", "2016-05-13", "016780", "30156")
-
-records <- correct_levels_in_variable(records,"COD_CATEGORIA","0905", "0902", conditional_variables, conditions)
-
-0907
-2016-05-13
-016780
-30156
-0905
 
 
 # source: https://github.com/awalker89/openxlsx/issues/111
