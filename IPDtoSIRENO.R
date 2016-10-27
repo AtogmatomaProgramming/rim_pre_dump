@@ -244,7 +244,7 @@ remove_trip <- function(df, date, cod_type_sample, cod_ship, cod_port, cod_gear,
   return(df)
 }
 
-# function to check the month: Check if all the data in the dataframer belongs to
+# function to check the month: Check if all the data in the dataframe belongs to
 # the same month, allocated in MONTH variable
 # df: dataframe to check
 # return a dataframe with the samples of incorrect month
