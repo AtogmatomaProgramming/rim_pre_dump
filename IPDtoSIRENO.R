@@ -393,6 +393,22 @@ export_to_excel <- function(df){
 }
 
 
+# ---- function to add variable country ----------------------------------------
+#
+#' Add variable country code
+# 
+#' Add variable country code (COD_PAIS) at the end of the dataframe
+#' @param df: dataframe to modify
+#' @return Return a dataframe with the variable country code
+#' 
+create_variable_code_country <- function(df){
+  ships <- maestro_flota_sireno[,c("BARCOD", "PAICOD")]
+  with_country <- merge(x = df, y = ships, by.x = "COD_BARCO", by.y = "BARCOD", all.x = TRUE)
+  colnames(with_country["PAICOD"])<-c("COD_PAIS")
+  return (with_country)
+}
+
+
 # #### IMPORT FILE #############################################################
 records <- import_IPD_file(paste(PATH_DATA,FILENAME, sep="/"))
 
@@ -442,6 +458,7 @@ check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 check_categorias <- check_categories(records)
 
+records <- create_variable_code_country(records)
 
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
