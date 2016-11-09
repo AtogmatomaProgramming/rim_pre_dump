@@ -441,7 +441,77 @@ create_variable_code_country <- function(df){
 
 
 # #### IMPORT FILE #############################################################
+
+
+
+
 records <- import_IPD_file(paste(PATH_DATA,FILENAME, sep="/"))
+
+records$FECHA <- as.POSIXct(records$FECHA)
+errores <- records %>%
+  mutate(mult = PESO_MUESTRA/P_MUE_DESEM) %>%
+  filter(mult==10 | mult==100) %>%
+  select_("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM",
+          "COD_TIPO_MUE","COD_ESP_MUE", "COD_CATEGORIA", "COD_ESP_CAT",
+          "SEXO", "PESO_MUESTRA", "P_MUE_DESEM", "mult") %>%
+  distinct()%>%
+  arrange_(BASE_FIELDS)
+
+
+
+AREAS_INFLUENCE <- read.csv(file="areas_influencia.csv", header = TRUE, colClasses = c("factor","factor","factor","factor"))
+
+
+# Function to separate a dataframe by area of influence
+separateDataframeByInfluenceArea <- function (df, cod_puerto_column){
+  AREAS_INFLUENCE <- AREAS_INFLUENCE[,c("COD_PUERTO", "AREA")]
+  by_area <- merge(df, AREAS_INFLUENCE, by.x = cod_puerto_column, by.y = "COD_PUERTO", all.x = TRUE )
+  by_area <- dlply (by_area, "AREA")
+}
+
+PRUEBA <- separateDataframeByInfluenceArea (errores, "COD_PUERTO")
+
+
+# Function to export to csv a list of dataframes
+exportListToCsv <- function(listo){
+  lapply(listo, function(x){
+                  return (names(list[[x]]))
+                  # write.csv(x, file = filename)
+                          })
+  
+}
+
+lapply(seq_along(PRUEBA), function(i){
+                            list_names <- names(PRUEBA)[[i]]
+                            filename <- paste(list_names, ".csv", sep = "")
+                            write.csv(PRUEBA[[1]], file = filename)        
+                            })
+
+
+exportListToCsv(PRUEBA)
+names(PRUEBA[1])
+
+PRUEBA
+
+data(AREAS_INFLUENCE)
+
+
+
+df <- records
+busqueda <- df[df$FECHA == "2016-05-03" &
+                 df$COD_PUERTO == "1418" &
+                 df$COD_BARCO == "202864" &
+                 df$COD_ESP_MUE == "10540",]
+
+
+
+class(records$P_MUE_DESEM)
+class(records[["P_MUE_DESEM"]])
+class(records$PESO_MUESTRA)
+class(records[["PESO_MUESTRA"]])
+
+
+
 
 # #### START CHECK #############################################################
 
