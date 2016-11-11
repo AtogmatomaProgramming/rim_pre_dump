@@ -371,6 +371,37 @@ check_categories <- function(df){
   return (errors)
 }
 
+# ---- function to check if one category has two or more different P_MUE_DES ----------------------------------------
+#
+#' function to check if one category has two or more different P_MUE_DES. 
+#' Mostly, this cases correspond to mixed species or sexed species, but in other
+#' cases this can be an error in the keyed process by IPD:
+#' - in some mixed species, one category (0901) contains two 'species
+#' of the category', for example Lophis piscatorius and L. budegassa, everyone
+#' with its own 'landing weight'. In the dumped in SIRENO, only the first of the
+#' 'landing weight' is used and the records with the second 'landing weight' are
+#' discarded. The correct way to introduce this samples in SIRENO is with 
+#' the specie of the second 'landing weight' keyed like another category (0902)
+#' 
+#' With this function we obtain all the categories with two or more different
+#' 'landing weight'.
+# 
+#' @param df: dataframe to modify
+#' @return Return a dataframe with all the categories with two or more different
+#' 'landing weight'
+#' 
+
+
+check_one_category_with_different_landing_weight <- function(df){
+  df <- df[,c(BASE_FIELDS, "COD_ESP_MUE", "COD_CATEGORIA", "P_MUE_DESEM")]
+  df$FECHA <- as.POSIXct(df$FECHA)
+  fields_to_count <- c(BASE_FIELDS, "COD_ESP_MUE", "COD_CATEGORIA")
+  df_filtrado <- df %>%
+    distinct() %>%
+    count_(fields_to_count) %>%
+    filter(n>1)
+}
+
 # function to export file to excel.
 # if this error is returned:
 #    Error: zipping up workbook failed. Please make sure Rtools is installed or a zip application is available to R.
@@ -410,7 +441,7 @@ create_variable_code_country <- function(df){
 
 
 # #### IMPORT FILE #############################################################
-records <- import_IPD_file(paste(PATH_DATA,FILENAME, sep="/"))
+records <- importIPDFile(paste(PATH_DATA,FILENAME, sep="/"))
 
 # #### START CHECK #############################################################
 
@@ -458,10 +489,10 @@ check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 check_categorias <- check_categories(records)
 
+check_one_category_with_different_landing_weight <- check_one_category_with_different_landing_weight(records)
+
 records <- create_variable_code_country(records)
 
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
 export_to_excel(records)
-
-
