@@ -489,7 +489,7 @@ check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 check_categorias <- check_categories(records)
 
-check_one_category_with_different_landing_weight <- check_same_category_with_different_landing_weight(records)
+check_one_category_with_different_landing_weight <- check_one_category_with_different_landing_weight(records)
 
 records <- create_variable_code_country(records)
 
