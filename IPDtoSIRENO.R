@@ -54,8 +54,8 @@ MESSAGE_ERRORS<- list() #list with the errors
 PATH_FILE <- "F:/misdoc/sap/IPDtoSIRENO"
 PATH_DATA<- "/data"
 #FILENAME <- "muestreos_especie_4_2016_todos_ANADIDOS_ERRORES.txt"
-FILENAME <- "muestreos_especie_5_2016_todos_.txt"
-MONTH <- 5
+FILENAME <- "muestreos_especie_6_2016_ICES_MED.txt"
+MONTH <- 6
 YEAR <- "2016"
 ################################################################################
 
@@ -218,9 +218,24 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
       }
       
       row_to_change[variable] <- correct_data
-      df[row.names(df)==row_names,] <- row_to_change
+      df[row_names,] <- row_to_change
 
+      # add to log file
+      
+      string_conditional_variables <- toString(conditional_variables)
+      string_conditional_variables <- sub(",","",string_conditional_variables)
+      
+      string_conditions <- toString(conditions)
+      string_conditions <- sub(",","",string_conditions)
+      
+      export_log_file("change variable", variable, erroneus_data, correct_data, string_conditional_variables, string_conditions)
+      #export file
+      export_file_to_sireno()
+      # return
+      
       return(df)  
+      
+
   } else {
     stop("Some argument is missing.")
   }
@@ -377,7 +392,7 @@ check_categories <- function(df){
 #' Mostly, this cases correspond to mixed species or sexed species, but in other
 #' cases this can be an error in the keyed process by IPD:
 #' - in some mixed species, one category (0901) contains two 'species
-#' of the category', for example Lophis piscatorius and L. budegassa, everyone
+#' of the category'. For example Lophis piscatorius and L. budegassa, everyone
 #' with its own 'landing weight'. In the dumped in SIRENO, only the first of the
 #' 'landing weight' is used and the records with the second 'landing weight' are
 #' discarded. The correct way to introduce this samples in SIRENO is with 
@@ -390,9 +405,7 @@ check_categories <- function(df){
 #' @return Return a dataframe with all the categories with two or more different
 #' 'landing weight'
 #' 
-
-
-check_one_category_with_different_landing_weight <- function(df){
+one_category_with_different_landing_weight <- function(df){
   df <- df[,c(BASE_FIELDS, "COD_ESP_MUE", "COD_CATEGORIA", "P_MUE_DESEM")]
   df$FECHA <- as.POSIXct(df$FECHA)
   fields_to_count <- c(BASE_FIELDS, "COD_ESP_MUE", "COD_CATEGORIA")
@@ -418,7 +431,7 @@ export_to_excel <- function(df){
   filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH)], "_2016.xlsx", sep="")
   filepath = paste(PATH_FILE, PATH_DATA, sep="")
   filepath = paste(filepath, filename, sep = "/")
-  colnames(df) <- c("FECHA","PUERTO","BUQUE","ARTE","ORIGEN","METIER","PROYECTO","TIPO MUESTREO","NRECHAZOS","NBARCOS MUESTREADOS","CUADRICULA","LAT DECIMAL","LON DECIMAL","DIAS_MAR","PESO_TOTAL","COD_ESP_TAX","TIPO_MUESTREO","PROCEDENCIA","COD_CATEGORIA","PESO","COD_ESP_MUE","SEXO","PESO MUESTRA","MEDIDA","TALLA","NEJEMPLARES","COD_PUERTO_DESCARGA")
+  colnames(df) <- c("FECHA","PUERTO","BUQUE","ARTE","ORIGEN","METIER","PROYECTO","TIPO MUESTREO","NRECHAZOS","NBARCOS MUESTREADOS","CUADRICULA","LAT DECIMAL","LON DECIMAL","DIAS_MAR","PESO_TOTAL","COD_ESP_TAX","TIPO_MUESTREO","PROCEDENCIA","COD_CATEGORIA","PESO","COD_ESP_MUE","SEXO","PESO MUESTRA","MEDIDA","TALLA","NEJEMPLARES","COD_PUERTO_DESCARGA","COD_PAIS")
   df[["FECHA"]] <- as.character(df[["FECHA"]]) #it's mandatory convert date to character. I don't know why.
   write.xlsx(df, filepath, keepNA=TRUE, colnames=TRUE)
 }
@@ -489,7 +502,8 @@ check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 check_categorias <- check_categories(records)
 
-check_one_category_with_different_landing_weight <- check_one_category_with_different_landing_weight(records)
+
+check_one_category_with_different_landing_weight <- one_category_with_different_landing_weight(records)
 
 records <- create_variable_code_country(records)
 
