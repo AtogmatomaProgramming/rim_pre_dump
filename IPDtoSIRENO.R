@@ -435,6 +435,9 @@ export_to_excel <- function(df){
 create_variable_code_country <- function(df){
   ships <- maestro_flota_sireno[,c("BARCOD", "PAICOD")]
   with_country <- merge(x = df, y = ships, by.x = "COD_BARCO", by.y = "BARCOD", all.x = TRUE)
+  #the order of the variables has been changed in the merge (I think), so
+  #we need to reorder:
+  with_country <- with_country[,c(2,3,1,4:length(with_country))]
   colnames(with_country["PAICOD"])<-c("COD_PAIS")
   return (with_country)
 }
@@ -444,6 +447,8 @@ create_variable_code_country <- function(df){
 records <- importIPDFile(paste(PATH_DATA,FILENAME, sep="/"))
 
 # #### START CHECK #############################################################
+
+ver <- records[records$FECHA=="2016/06/01" & records$COD_BARCO=="202618" & records$COD_ESP_MUE=="10821",]
 
 check_mes <- check_month(records)
 
@@ -496,3 +501,8 @@ records <- create_variable_code_country(records)
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
 export_to_excel(records)
+
+
+
+
+
