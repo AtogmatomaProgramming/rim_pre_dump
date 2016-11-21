@@ -218,7 +218,7 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
       }
       
       row_to_change[variable] <- correct_data
-      df[row.names(df)==row_names,] <- row_to_change
+      df[row.names(df) %in% row_names,] <- row_to_change
 
       return(df)  
   } else {
