@@ -5,17 +5,17 @@
 ####
 #### author: Marco A. Amez Fernandez
 #### email: ieo.marco.a.amez@gmail.com
-#### date of last modification: 19/8//2016
-#### version: 0.9
+#### date of last modification: 23/11/2016
+#### version: 0.95
 ####
-#### files required: file from IPD with data for de the dump in SIRENO
+#### files required: file from IPD with data to record in SIRENO
 
 
 # #### CONFIG ##################################################################
 
 # ---- PACKAGES ----------------------------------------------------------------
 
-library(plyr) #mapvalues(): replace items IT'S BETTER TO LOAD plyr BEFORE dplyr
+library(plyr) # IT'S BETTER TO LOAD plyr BEFORE dplyr
 library(dplyr) #arrange_()
 library(tools) #file_ext()
 library(stringr) #str_split()
@@ -52,19 +52,17 @@ MESSAGE_ERRORS<- list() #list with the errors
 ################################################################################
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES:
 PATH_FILE <- "F:/misdoc/sap/IPDtoSIRENO"
-PATH_DATA<- "/data"
+PATH_DATA<- "/data/julio"
 #FILENAME <- "muestreos_especie_4_2016_todos_ANADIDOS_ERRORES.txt"
-FILENAME <- "muestreos_especie_5_2016_todos_.txt"
-MONTH <- 5
+FILENAME <- "muestreos_especie_julio_ICES.txt"
+MONTH <- 7
 YEAR <- "2016"
 ################################################################################
 
 MONTH <- sprintf("%02d", MONTH)
 LOG_FILE <- paste("LOG_", YEAR, "_", MONTH, ".csv", sep="")
 PATH_LOG_FILE <- file.path(paste(PATH_FILE, PATH_DATA, LOG_FILE, sep = "/"))
-
 PATH_BACKUP_FILE <- file.path(paste(PATH_FILE, PATH_DATA, "backup", sep = "/"))
-
 PATH_ERRORS <- paste(PATH_FILE,"/errors",sep="")
 
 # #### RECOVERY DATA SETS ######################################################
@@ -218,6 +216,14 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
       }
       
       row_to_change[variable] <- correct_data
+      
+      ##### IMPORTANT TO CHECK:
+      ##### no se si esto da problemas:
+      ##### si la variable original es un factor, ¿no debería ser también el de la nueva un factor?
+      # if (is.factor(data[[variable]])){
+      #   row_to_change[[variable]] <- as.factor(row_to_change[[variable]])
+      # }
+      # df[row.names(df)==row_names,] <- row_to_change
       df[row.names(df) %in% row_names,] <- row_to_change
 
       return(df)  
@@ -418,7 +424,7 @@ export_to_excel <- function(df){
   filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH)], "_2016.xlsx", sep="")
   filepath = paste(PATH_FILE, PATH_DATA, sep="")
   filepath = paste(filepath, filename, sep = "/")
-  colnames(df) <- c("FECHA","PUERTO","BUQUE","ARTE","ORIGEN","METIER","PROYECTO","TIPO MUESTREO","NRECHAZOS","NBARCOS MUESTREADOS","CUADRICULA","LAT DECIMAL","LON DECIMAL","DIAS_MAR","PESO_TOTAL","COD_ESP_TAX","TIPO_MUESTREO","PROCEDENCIA","COD_CATEGORIA","PESO","COD_ESP_MUE","SEXO","PESO MUESTRA","MEDIDA","TALLA","NEJEMPLARES","COD_PUERTO_DESCARGA")
+  colnames(df) <- c("FECHA","PUERTO","BUQUE","ARTE","ORIGEN","METIER","PROYECTO","TIPO MUESTREO","NRECHAZOS","NBARCOS MUESTREADOS","CUADRICULA","LAT DECIMAL","LON DECIMAL","DIAS_MAR","PESO_TOTAL","COD_ESP_TAX","TIPO_MUESTREO","PROCEDENCIA","COD_CATEGORIA","PESO","COD_ESP_MUE","SEXO","PESO MUESTRA","MEDIDA","TALLA","NEJEMPLARES","COD_PUERTO_DESCARGA", "COD_PAIS")
   df[["FECHA"]] <- as.character(df[["FECHA"]]) #it's mandatory convert date to character. I don't know why.
   write.xlsx(df, filepath, keepNA=TRUE, colnames=TRUE)
 }
@@ -438,7 +444,7 @@ create_variable_code_country <- function(df){
   #the order of the variables has been changed in the merge (I think), so
   #we need to reorder:
   with_country <- with_country[,c(2,3,1,4:length(with_country))]
-  colnames(with_country["PAICOD"])<-c("COD_PAIS")
+  names(with_country)[names(with_country) == "PAICOD"] <- "COD_PAIS"
   return (with_country)
 }
 
@@ -447,8 +453,6 @@ create_variable_code_country <- function(df){
 records <- importIPDFile(paste(PATH_DATA,FILENAME, sep="/"))
 
 # #### START CHECK #############################################################
-
-ver <- records[records$FECHA=="2016/06/01" & records$COD_BARCO=="202618" & records$COD_ESP_MUE=="10821",]
 
 check_mes <- check_month(records)
 
@@ -469,6 +473,7 @@ check_procedencia <- check_variable_with_master("PROCEDENCIA")
 
 
 check_tipo_muestreo <- check_variable_with_master("COD_TIPO_MUE")
+
 
 # TODO: add check_type_sample to check_variable_with_master
 check_nombre_tipo_muestreo <- check_type_sample(records)
@@ -494,7 +499,14 @@ check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 check_categorias <- check_categories(records)
 
+
 check_one_category_with_different_landing_weight <- check_one_category_with_different_landing_weight(records)
+
+  
+check_one_category_with_different_landing_weight <- humanize(check_one_category_with_different_landing_weight)
+  errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weight, "COD_PUERTO")
+  exportListToCsv(errors_category)
+
 
 records <- create_variable_code_country(records)
 
