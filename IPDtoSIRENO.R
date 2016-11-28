@@ -5,36 +5,32 @@
 ####
 #### author: Marco A. Amez Fernandez
 #### email: ieo.marco.a.amez@gmail.com
-#### date of last modification: 19/8//2016
-#### version: 0.9
+#### date of last modification: 23/11/2016
+#### version: 0.95
 ####
-#### files required: file from IPD with data for de the dump in SIRENO
+#### files required: file from IPD with data to record in SIRENO
 
 
 # #### CONFIG ##################################################################
 
 # ---- PACKAGES ----------------------------------------------------------------
 
-library(plyr) #mapvalues(): replace items IT'S BETTER TO LOAD plyr BEFORE dplyr
+library(plyr) # It's better to load plyr before dplyr
 library(dplyr) #arrange_()
 library(tools) #file_ext()
 library(stringr) #str_split()
 library(devtools) # Need this package to use install and install_github
 
-  # ---- install sapmuebase from local
-  install("F:/misdoc/sap/sapmuebase")
-  # ---- install sapmuebase from github
-  #install_github("Eucrow/sapmuebase") # Make sure this is the last version
+# ---- install sapmuebase from local
+install("F:/misdoc/sap/sapmuebase")
+# ---- install sapmuebase from github
+#install_github("Eucrow/sapmuebase")
 
 library(sapmuebase) # and load the library
   
-  # ---- install openxlsx
-  #install.packages("openxlsx")
+# ---- install openxlsx
+#install.packages("openxlsx")
 library(openxlsx)
-
-#initial_wd <- getwd()
-#setwd("F:/misdoc/sap")
-#install("sapmuebase")
 
 # ---- SET WORKING DIRECTORY ---------------------------------------------------
 
@@ -52,19 +48,19 @@ MESSAGE_ERRORS<- list() #list with the errors
 ################################################################################
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES:
 PATH_FILE <- "F:/misdoc/sap/IPDtoSIRENO"
-PATH_DATA<- "/data"
+PATH_DATA<- "/data/julio"
 #FILENAME <- "muestreos_especie_4_2016_todos_ANADIDOS_ERRORES.txt"
-FILENAME <- "muestreos_especie_5_2016_todos_.txt"
-MONTH <- 5
+
+FILENAME <- "muestreos_especie_julio_ICES.txt"
+MONTH <- 7
+
 YEAR <- "2016"
 ################################################################################
 
 MONTH <- sprintf("%02d", MONTH)
 LOG_FILE <- paste("LOG_", YEAR, "_", MONTH, ".csv", sep="")
 PATH_LOG_FILE <- file.path(paste(PATH_FILE, PATH_DATA, LOG_FILE, sep = "/"))
-
 PATH_BACKUP_FILE <- file.path(paste(PATH_FILE, PATH_DATA, "backup", sep = "/"))
-
 PATH_ERRORS <- paste(PATH_FILE,"/errors",sep="")
 
 # #### RECOVERY DATA SETS ######################################################
@@ -86,7 +82,7 @@ BASE_FIELDS <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_TIPO_MU
 
 # #### FUNCTIONS ###############################################################
 
-#function to read operation code if exists. If not, operation code = 0
+#function to read the operation code. If not exist, operation code = 0
 read_operation_code <- function(){
   operation_code <- 0
   if (file.exists(PATH_LOG_FILE)){
@@ -102,9 +98,9 @@ read_operation_code <- function(){
   return(operation_code)
 }
 
-# function to export file
+# ---- function to export tracking file ----------------------------------------
 # create the file with the operation code
-export_file_to_sireno <- function(){
+exportTrackingFile<- function(){
   operation_code <- read_operation_code()
   filename <- file_path_sans_ext(FILENAME)
   filename <- paste(filename, operation_code, sep="_")
@@ -113,7 +109,21 @@ export_file_to_sireno <- function(){
   write.csv(records, filename, quote = FALSE, row.names = FALSE)
 }
 
-# function to create and/or update log file
+# ---- function to create and/or update log file -------------------------------
+#' Create and/or update file
+#' 
+#' This function create (or update, if it's already exists) a log file with the
+#' arguments sended.
+#' @param action: the realized action. For example "Remove" or "Change"
+#' @param df: dataframe
+#' @param variable: variable name (column)
+#' @param erroneus_data: the erroneus value to change
+#' @param correct_data: the correct value
+#' @param conditional_variables: a vector of characters with the name of the 
+#' conditional variables
+#' @param conditions: a vector of characters with the conditional values, whith 
+#' the same lenght that conditional_variables
+#' 
 export_log_file <- function(action, variable, erroneus_data="", correct_data="", conditional_variable ="", condition =""){
   
   #append data to file:
@@ -197,7 +207,7 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
       # add to log file
       export_log_file("change", variable, erroneus_data, correct_data)
       #export file
-      export_file_to_sireno()
+      exportTrackingFile()
       #return
       return(df)
   } else if (!missing(df) && !missing(variable) && !missing(erroneus_data) && !missing(correct_data)){
@@ -220,7 +230,23 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
       row_to_change[variable] <- correct_data
       df[row.names(df) %in% row_names,] <- row_to_change
 
+
+      # add to log file
+      
+      string_conditional_variables <- toString(conditional_variables)
+      string_conditional_variables <- sub(",","",string_conditional_variables)
+      
+      string_conditions <- toString(conditions)
+      string_conditions <- sub(",","",string_conditions)
+      
+      export_log_file("change variable", variable, erroneus_data, correct_data, string_conditional_variables, string_conditions)
+      #export file
+      exportTrackingFile()
+      # return
+      
       return(df)  
+      
+
   } else {
     stop("Some argument is missing.")
   }
@@ -239,7 +265,7 @@ remove_trip <- function(df, date, cod_type_sample, cod_ship, cod_port, cod_gear,
   error_text <- paste(date, cod_type_sample, cod_ship, cod_port, cod_gear, cod_origin, rim_stratum, sep=" ")
   export_log_file("remove trip", "trip", error_text)
   #export file
-  export_file_to_sireno()
+  exportTrackingFile()
   # return
   return(df)
 }
@@ -377,7 +403,7 @@ check_categories <- function(df){
 #' Mostly, this cases correspond to mixed species or sexed species, but in other
 #' cases this can be an error in the keyed process by IPD:
 #' - in some mixed species, one category (0901) contains two 'species
-#' of the category', for example Lophis piscatorius and L. budegassa, everyone
+#' of the category'. For example Lophis piscatorius and L. budegassa, everyone
 #' with its own 'landing weight'. In the dumped in SIRENO, only the first of the
 #' 'landing weight' is used and the records with the second 'landing weight' are
 #' discarded. The correct way to introduce this samples in SIRENO is with 
@@ -390,9 +416,7 @@ check_categories <- function(df){
 #' @return Return a dataframe with all the categories with two or more different
 #' 'landing weight'
 #' 
-
-
-check_one_category_with_different_landing_weight <- function(df){
+one_category_with_different_landing_weight <- function(df){
   df <- df[,c(BASE_FIELDS, "COD_ESP_MUE", "COD_CATEGORIA", "P_MUE_DESEM")]
   df$FECHA <- as.POSIXct(df$FECHA)
   fields_to_count <- c(BASE_FIELDS, "COD_ESP_MUE", "COD_CATEGORIA")
@@ -418,7 +442,9 @@ export_to_excel <- function(df){
   filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH)], "_2016.xlsx", sep="")
   filepath = paste(PATH_FILE, PATH_DATA, sep="")
   filepath = paste(filepath, filename, sep = "/")
-  colnames(df) <- c("FECHA","PUERTO","BUQUE","ARTE","ORIGEN","METIER","PROYECTO","TIPO MUESTREO","NRECHAZOS","NBARCOS MUESTREADOS","CUADRICULA","LAT DECIMAL","LON DECIMAL","DIAS_MAR","PESO_TOTAL","COD_ESP_TAX","TIPO_MUESTREO","PROCEDENCIA","COD_CATEGORIA","PESO","COD_ESP_MUE","SEXO","PESO MUESTRA","MEDIDA","TALLA","NEJEMPLARES","COD_PUERTO_DESCARGA")
+
+  colnames(df) <- c("FECHA","PUERTO","BUQUE","ARTE","ORIGEN","METIER","PROYECTO","TIPO MUESTREO","NRECHAZOS","NBARCOS MUESTREADOS","CUADRICULA","LAT DECIMAL","LON DECIMAL","DIAS_MAR","PESO_TOTAL","COD_ESP_TAX","TIPO_MUESTREO","PROCEDENCIA","COD_CATEGORIA","PESO","COD_ESP_MUE","SEXO","PESO MUESTRA","MEDIDA","TALLA","NEJEMPLARES","COD_PUERTO_DESCARGA","COD_PAIS")
+
   df[["FECHA"]] <- as.character(df[["FECHA"]]) #it's mandatory convert date to character. I don't know why.
   write.xlsx(df, filepath, keepNA=TRUE, colnames=TRUE)
 }
@@ -438,7 +464,7 @@ create_variable_code_country <- function(df){
   #the order of the variables has been changed in the merge (I think), so
   #we need to reorder:
   with_country <- with_country[,c(2,3,1,4:length(with_country))]
-  colnames(with_country["PAICOD"])<-c("COD_PAIS")
+  names(with_country)[names(with_country) == "PAICOD"] <- "COD_PAIS"
   return (with_country)
 }
 
@@ -447,8 +473,6 @@ create_variable_code_country <- function(df){
 records <- importIPDFile(paste(PATH_DATA,FILENAME, sep="/"))
 
 # #### START CHECK #############################################################
-
-ver <- records[records$FECHA=="2016/06/01" & records$COD_BARCO=="202618" & records$COD_ESP_MUE=="10821",]
 
 check_mes <- check_month(records)
 
@@ -469,6 +493,7 @@ check_procedencia <- check_variable_with_master("PROCEDENCIA")
 
 
 check_tipo_muestreo <- check_variable_with_master("COD_TIPO_MUE")
+
 
 # TODO: add check_type_sample to check_variable_with_master
 check_nombre_tipo_muestreo <- check_type_sample(records)
@@ -494,7 +519,14 @@ check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 check_categorias <- check_categories(records)
 
-check_one_category_with_different_landing_weight <- check_one_category_with_different_landing_weight(records)
+
+check_one_category_with_different_landing_weight <- one_category_with_different_landing_weight(records)
+
+  
+check_one_category_with_different_landing_weight <- humanize(check_one_category_with_different_landing_weight)
+  errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weight, "COD_PUERTO")
+  exportListToCsv(errors_category)
+
 
 records <- create_variable_code_country(records)
 
