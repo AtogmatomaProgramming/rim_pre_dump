@@ -15,26 +15,22 @@
 
 # ---- PACKAGES ----------------------------------------------------------------
 
-library(plyr) # IT'S BETTER TO LOAD plyr BEFORE dplyr
+library(plyr) # It's better to load plyr before dplyr
 library(dplyr) #arrange_()
 library(tools) #file_ext()
 library(stringr) #str_split()
 library(devtools) # Need this package to use install and install_github
 
-  # ---- install sapmuebase from local
-  install("F:/misdoc/sap/sapmuebase")
-  # ---- install sapmuebase from github
-  #install_github("Eucrow/sapmuebase") # Make sure this is the last version
+# ---- install sapmuebase from local
+install("F:/misdoc/sap/sapmuebase")
+# ---- install sapmuebase from github
+#install_github("Eucrow/sapmuebase")
 
 library(sapmuebase) # and load the library
   
-  # ---- install openxlsx
-  #install.packages("openxlsx")
+# ---- install openxlsx
+#install.packages("openxlsx")
 library(openxlsx)
-
-#initial_wd <- getwd()
-#setwd("F:/misdoc/sap")
-#install("sapmuebase")
 
 # ---- SET WORKING DIRECTORY ---------------------------------------------------
 
@@ -86,7 +82,7 @@ BASE_FIELDS <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_TIPO_MU
 
 # #### FUNCTIONS ###############################################################
 
-#function to read operation code if exists. If not, operation code = 0
+#function to read the operation code. If not exist, operation code = 0
 read_operation_code <- function(){
   operation_code <- 0
   if (file.exists(PATH_LOG_FILE)){
@@ -102,9 +98,9 @@ read_operation_code <- function(){
   return(operation_code)
 }
 
-# function to export file
+# ---- function to export tracking file ----------------------------------------
 # create the file with the operation code
-export_file_to_sireno <- function(){
+exportTrackingFile<- function(){
   operation_code <- read_operation_code()
   filename <- file_path_sans_ext(FILENAME)
   filename <- paste(filename, operation_code, sep="_")
@@ -113,7 +109,21 @@ export_file_to_sireno <- function(){
   write.csv(records, filename, quote = FALSE, row.names = FALSE)
 }
 
-# function to create and/or update log file
+# ---- function to create and/or update log file -------------------------------
+#' Create and/or update file
+#' 
+#' This function create (or update, if it's already exists) a log file with the
+#' arguments sended.
+#' @param action: the realized action. For example "Remove" or "Change"
+#' @param df: dataframe
+#' @param variable: variable name (column)
+#' @param erroneus_data: the erroneus value to change
+#' @param correct_data: the correct value
+#' @param conditional_variables: a vector of characters with the name of the 
+#' conditional variables
+#' @param conditions: a vector of characters with the conditional values, whith 
+#' the same lenght that conditional_variables
+#' 
 export_log_file <- function(action, variable, erroneus_data="", correct_data="", conditional_variable ="", condition =""){
   
   #append data to file:
@@ -197,7 +207,7 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
       # add to log file
       export_log_file("change", variable, erroneus_data, correct_data)
       #export file
-      export_file_to_sireno()
+      exportTrackingFile()
       #return
       return(df)
   } else if (!missing(df) && !missing(variable) && !missing(erroneus_data) && !missing(correct_data)){
@@ -231,7 +241,7 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
       
       export_log_file("change variable", variable, erroneus_data, correct_data, string_conditional_variables, string_conditions)
       #export file
-      export_file_to_sireno()
+      exportTrackingFile()
       # return
       
       return(df)  
@@ -255,7 +265,7 @@ remove_trip <- function(df, date, cod_type_sample, cod_ship, cod_port, cod_gear,
   error_text <- paste(date, cod_type_sample, cod_ship, cod_port, cod_gear, cod_origin, rim_stratum, sep=" ")
   export_log_file("remove trip", "trip", error_text)
   #export file
-  export_file_to_sireno()
+  exportTrackingFile()
   # return
   return(df)
 }
