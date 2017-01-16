@@ -32,27 +32,21 @@ library(sapmuebase) # and load the library
 #install.packages("openxlsx")
 library(openxlsx)
 
-# ---- SET WORKING DIRECTORY ---------------------------------------------------
-
-setwd("F:/misdoc/sap/IPDtoSIRENO/")
-
-
-# ---- CONSTANTS ---------------------------------------------------------------
-
-PATH <- getwd()
-
 # ---- GLOBAL VARIABLES --------------------------------------------------------
 ERRORS <- list() #list with all errors found in dataframes
 MESSAGE_ERRORS<- list() #list with the errors
 
 ################################################################################
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES:
-PATH_FILE <- "F:/misdoc/sap/IPDtoSIRENO"
-PATH_DATA<- "/data/septiembre"
+
+setwd("F:/misdoc/sap/IPDtoSIRENO/")
+
+PATH_FILE <- getwd()
+PATH_DATA<- "/data/octubre"
 #FILENAME <- "muestreos_especie_4_2016_todos_ANADIDOS_ERRORES.txt"
 
-FILENAME <- "muestreos_especie_8_9_ICES.txt"
-MONTH <- 9
+FILENAME <- "muestreos_especie_10_ICES_new.txt"
+MONTH <- 10
 
 YEAR <- "2016"
 ################################################################################
