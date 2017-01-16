@@ -48,11 +48,11 @@ MESSAGE_ERRORS<- list() #list with the errors
 ################################################################################
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES:
 PATH_FILE <- "F:/misdoc/sap/IPDtoSIRENO"
-PATH_DATA<- "/data/julio"
+PATH_DATA<- "/data/septiembre"
 #FILENAME <- "muestreos_especie_4_2016_todos_ANADIDOS_ERRORES.txt"
 
-FILENAME <- "muestreos_especie_julio_ICES.txt"
-MONTH <- 7
+FILENAME <- "muestreos_especie_8_9_ICES.txt"
+MONTH <- 9
 
 YEAR <- "2016"
 ################################################################################
@@ -65,10 +65,8 @@ PATH_ERRORS <- paste(PATH_FILE,"/errors",sep="")
 
 # #### RECOVERY DATA SETS ######################################################
 
-data(estrato_rim) #load the data set
-#estrato_rim <- estrato_rim
+data(estrato_rim)
 data(puerto)
-# puerto <- puerto
 data(maestro_flota_sireno)
 data(cfpo2015)
 data(especies_mezcla)
@@ -470,7 +468,7 @@ create_variable_code_country <- function(df){
 
 
 # #### IMPORT FILE #############################################################
-records <- importIPDFile(paste(PATH_DATA,FILENAME, sep="/"))
+records <- importIPDFile(paste(PATH_DATA,FILENAME, sep="/"), by_month = 9)
 
 # #### START CHECK #############################################################
 
@@ -503,21 +501,36 @@ check_duplicados_tipo_muestreo <- check_duplicates_type_sample(records)
 
 
 check_falsos_mt2 <- check_false_mt2(records)
+  records <- correct_levels_in_variable(records, "COD_TIPO_MUE", "MT2A", "MT1A", c("FECHA", "COD_BARCO"), c("2016-09-30","200849") )
+  records <- correct_levels_in_variable(records, "COD_TIPO_MUE", "MT2A", "MT1A", c("FECHA", "COD_BARCO"), c("2016-09-07","012438") )
+  records <- correct_levels_in_variable(records, "COD_TIPO_MUE", "MT2A", "MT1A", c("FECHA", "COD_BARCO"), c("2016-09-19","017006") )
 
 
 check_falsos_mt1 <- check_false_mt1(records)
 
 
 check_barcos_extranjeros <- check_foreing_ship(records)
-
+  records <- remove_trip(records, "2016-09-15", "MT1A", "800379", "0907", "102", "009", "BACA_CN")
+  records <- remove_trip(records, "2016-09-15", "MT1A", "800390", "0907", "102", "009", "BACA_CN")
+  records <- remove_trip(records, "2016-09-26", "MT2A", "800358", "0925", "102", "009", "JURELERA_CN")
 
 check_especies_mezcla_no_mezcla <- check_mixed_as_no_mixed(records)
 
 
 check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
+  # The erroneus specie is not 10261, it's 10267 Gaidropsarus vulgaris
+  # Asked to sup
+  maestro_categorias %>%
+              select(ESPCOD, ESPDESTAX) %>%
+              unique() %>%
+              filter(ESPDESTAX == "Gaidropsarus vulgaris")
+  # Correct COD_ESP_MUE and COD_ESP_CAT
+  records <- correct_levels_in_variable(records, "COD_ESP_MUE", "10261", "10267", c("FECHA", "COD_BARCO"), c("2016-09-20", "201773"))
+  records <- correct_levels_in_variable(records, "COD_ESP_CAT", "10261", "10267", c("FECHA", "COD_BARCO"), c("2016-09-20", "201773"))
 
-
+  
 check_categorias <- check_categories(records)
+# this categories has been already added to the SIRENO database
 
 
 check_one_category_with_different_landing_weight <- one_category_with_different_landing_weight(records)
