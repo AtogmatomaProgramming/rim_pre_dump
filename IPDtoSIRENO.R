@@ -1,6 +1,6 @@
 #### IPDtoSIRENO
 #### Script to check the monthly data dump from IPD database previous to SIRENO upload
-#### 
+####
 #### Return csv files with errors detected
 ####
 #### author: Marco A. Amez Fernandez
@@ -18,16 +18,16 @@
 library(plyr) # It's better to load plyr before dplyr
 library(dplyr) #arrange_()
 library(tools) #file_ext()
-library(stringr) #str_split()
+#library(stringr) #str_split()
 library(devtools) # Need this package to use install and install_github
 
 # ---- install sapmuebase from local
-install("F:/misdoc/sap/sapmuebase")
+#install("F:/misdoc/sap/sapmuebase")
 # ---- install sapmuebase from github
 #install_github("Eucrow/sapmuebase")
 
 library(sapmuebase) # and load the library
-  
+
 # ---- install openxlsx
 #install.packages("openxlsx")
 library(openxlsx)
@@ -37,22 +37,24 @@ ERRORS <- list() #list with all errors found in dataframes
 MESSAGE_ERRORS<- list() #list with the errors
 
 ################################################################################
-# YOU HAVE ONLY TO CHANGE THIS VARIABLES:
+# YOU HAVE ONLY TO CHANGE THIS VARIABLES:                                      #
 
 setwd("F:/misdoc/sap/IPDtoSIRENO/")
 
-PATH_FILE <- getwd()
-PATH_DATA<- "/data/octubre"
-#FILENAME <- "muestreos_especie_4_2016_todos_ANADIDOS_ERRORES.txt"
+PATH_DATA<- "/data/noviembre"
 
-FILENAME <- "muestreos_especie_10_ICES_new.txt"
-MONTH <- 10
+FILENAME <- "muestreos_especie_11_ICES.txt"
+
+MONTH <- 11
 
 YEAR <- "2016"
+
+#                                                                              #
 ################################################################################
 
-MONTH <- sprintf("%02d", MONTH)
-LOG_FILE <- paste("LOG_", YEAR, "_", MONTH, ".csv", sep="")
+PATH_FILE <- getwd()
+MONTH_STRING <- sprintf("%02d", MONTH)
+LOG_FILE <- paste("LOG_", YEAR, "_", MONTH_STRING, ".csv", sep="")
 PATH_LOG_FILE <- file.path(paste(PATH_FILE, PATH_DATA, LOG_FILE, sep = "/"))
 PATH_BACKUP_FILE <- file.path(paste(PATH_FILE, PATH_DATA, "backup", sep = "/"))
 PATH_ERRORS <- paste(PATH_FILE,"/errors",sep="")
@@ -103,7 +105,7 @@ exportTrackingFile<- function(){
 
 # ---- function to create and/or update log file -------------------------------
 #' Create and/or update file
-#' 
+#'
 #' This function create (or update, if it's already exists) a log file with the
 #' arguments sended.
 #' @param action: the realized action. For example "Remove" or "Change"
@@ -111,26 +113,26 @@ exportTrackingFile<- function(){
 #' @param variable: variable name (column)
 #' @param erroneus_data: the erroneus value to change
 #' @param correct_data: the correct value
-#' @param conditional_variables: a vector of characters with the name of the 
+#' @param conditional_variables: a vector of characters with the name of the
 #' conditional variables
-#' @param conditions: a vector of characters with the conditional values, whith 
+#' @param conditions: a vector of characters with the conditional values, whith
 #' the same lenght that conditional_variables
-#' 
+#'
 export_log_file <- function(action, variable, erroneus_data="", correct_data="", conditional_variable ="", condition =""){
-  
+
   #append data to file:
   date <- format(as.POSIXlt(Sys.time()), "%d-%m-%Y %H:%M:%S")
     #convert action to uppercase
     action <- toupper(action)
     #obtain the operation code
     operation_code <- read_operation_code() + 1
-    
+
   to_append <- paste(action, variable, erroneus_data, correct_data, conditional_variable, condition, operation_code, date, sep = ",")
-  
+
   #check if the file exists. If not, create it.
   if (!file.exists(PATH_LOG_FILE)){
     header <- "ACTION,variable,ERRONEUS_DATA,CORRECT_DATA,CONDITIONAL_VARIABLE,CONDITION,OPERATION_CODE,DATE"
-    write(header, PATH_LOG_FILE)    
+    write(header, PATH_LOG_FILE)
   }
   #and write:
   write(to_append, PATH_LOG_FILE, append = TRUE)
@@ -139,7 +141,7 @@ export_log_file <- function(action, variable, erroneus_data="", correct_data="",
 
 # ---- function to ckeck variables ---------------------------------------------
 #' Check variables
-# 
+#
 #' Check if the value of variables are consistents to the value in its SIRENO master.
 #' It's only available for variables with a data source (master): ESTRATO_RIM, COD_PUERTO,
 #' COD_ORIGEN, COD_ARTE, COD_PROCEDENCIA and TIPO_MUESTREO
@@ -156,7 +158,7 @@ check_variable_with_master <- function (variable){
      variable != "COD_TIPO_MUE"){
     stop(paste("This function is not available for ", variable))
   }
-  
+
   # look if the variable begin with "COD_". In this case, the name of the data source
   # is the name of the variable without "COD_"
   if (grepl("^COD_", variable)){
@@ -170,7 +172,7 @@ check_variable_with_master <- function (variable){
   errors <- subset(errors, is.na(get(variable_to_filter)))
   #prepare to return
   fields_to_filter <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_ARTE", "COD_ORIGEN", "COD_TIPO_MUE", "PROCEDENCIA")
-  
+
   errors <- errors[,fields_to_filter]
   errors$FECHA <- as.POSIXct(errors$FECHA)
   errors <- arrange_(errors, fields_to_filter)
@@ -182,7 +184,7 @@ check_variable_with_master <- function (variable){
 
 # ---- Change levels in a variable of a dataframe ---------------------------------------------
 #' Change levels
-#' 
+#'
 #' function to change levels in a variable of a dataframe. Add record to Log file
 #' and export file.
 #' @param df: dataframe
@@ -205,11 +207,11 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
   } else if (!missing(df) && !missing(variable) && !missing(erroneus_data) && !missing(correct_data)){
     # TODO: check if conditional_variables and conditiosn are lists??
       data <- df
-      
+
       for (i in 1:length(conditional_variables)) {
         data <- data[data[conditional_variables[i]]==conditions[i],]
       }
-      
+
       index_row_to_change <- which(data[[variable]]==erroneus_data)
       row_names<-row.names(data[index_row_to_change,])
       row_to_change <- df[row_names,]
@@ -218,31 +220,31 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
       if (!(correct_data %in% levels_in_df)){ #if not ...
         levels(df[[variable]]) <- c(levels(df[[variable]]), correct_data) # ... add it
       }
-      
+
       row_to_change[variable] <- correct_data
       df[row.names(df) %in% row_names,] <- row_to_change
 
 
       # add to log file
-      
+
       string_conditional_variables <- toString(conditional_variables)
-      string_conditional_variables <- sub(",","",string_conditional_variables)
-      
+      string_conditional_variables <- gsub(",","",string_conditional_variables)
+
       string_conditions <- toString(conditions)
-      string_conditions <- sub(",","",string_conditions)
-      
+      string_conditions <- gsub(",","",string_conditions)
+
       export_log_file("change variable", variable, erroneus_data, correct_data, string_conditional_variables, string_conditions)
       #export file
       exportTrackingFile()
       # return
-      
-      return(df)  
-      
+
+      return(df)
+
 
   } else {
     stop("Some argument is missing.")
   }
-} 
+}
 
 
 # function to remove trip. Add record to Log file and export file.
@@ -252,10 +254,47 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
 # return: dataframe without the deleted trips
 remove_trip <- function(df, date, cod_type_sample, cod_ship, cod_port, cod_gear, cod_origin, rim_stratum){
   df <- df[!(df["FECHA"]==date & df["COD_TIPO_MUE"] == cod_type_sample & df["COD_BARCO"] == cod_ship & df["COD_PUERTO"] == cod_port & df["COD_ARTE"] == cod_gear & df["COD_ORIGEN"] == cod_origin & df["ESTRATO_RIM"] == rim_stratum),]
-  
+
   # add to log file
   error_text <- paste(date, cod_type_sample, cod_ship, cod_port, cod_gear, cod_origin, rim_stratum, sep=" ")
   export_log_file("remove trip", "trip", error_text)
+  #export file
+  exportTrackingFile()
+  # return
+  return(df)
+}
+
+
+# function to remove MT1 trips with foreing vessels. Add record to Log file and export file.
+# df: dataframe
+# return: dataframe without the deleted trips
+remove_MT1_trips_foreing_vessels <- function(df){
+  
+  df[["FECHA"]] <- as.POSIXct(df[["FECHA"]])
+
+  #obtain MT1 trips with foreing vessels
+  mt1_foreing <- df %>%
+    filter( as.integer(as.character(COD_BARCO)) >= 800000 & COD_TIPO_MUE == "MT1A")
+ 
+  #remove trips
+  df <- df %>%
+    #ATENTION to the ! and ():
+    filter( !(as.integer(as.character(COD_BARCO)) >= 800000 & COD_TIPO_MUE == "MT1A"))
+
+  
+  # add to log file
+      # concat all the variables of the dataframe
+      r <- apply(mt1_foreing, 1, function(x){
+                                    c <- paste0(x, collapse = " ")
+                                    return(c)
+                                  }
+      )
+      # apply the export_log_file to every element of the list
+      lapply (r, function(x){
+                    export_log_file("remove trip", "trip", x)
+                  }
+      )
+
   #export file
   exportTrackingFile()
   # return
@@ -270,7 +309,7 @@ check_month <- function(df){
   df$months <- sapply (df["FECHA"], function(x){format(x, "%m")})
   erroneus_months <- as.data.frame(unique(df$months))
   erroneus_months <- erroneus_months %>%
-    filter(FECHA != MONTH)
+    filter(FECHA != MONTH_STRING)
   erroneus_samples <- merge(x = df, y = erroneus_months, by.x = "months", by.y = "FECHA", all.y = TRUE)
   return(erroneus_samples)
 }
@@ -293,9 +332,9 @@ check_duplicates_type_sample <- function(df){
   mt1 <- unique(mt1)
   mt2 <- df[df["COD_TIPO_MUE"]=="MT2A",c("COD_PUERTO","FECHA","COD_BARCO","ESTRATO_RIM")]
   mt2 <- unique(mt2)
-  
-  duplicated <- merge(x = mt1, y = mt2) 
-  
+
+  duplicated <- merge(x = mt1, y = mt2)
+
   return(duplicated)
 }
 
@@ -311,7 +350,7 @@ check_false_mt2 <- function(df){
     group_by(COD_PUERTO, FECHA, COD_BARCO, ESTRATO_RIM) %>%
     summarise(summatory = sum(EJEM_MEDIDOS)) %>%
     filter(summatory == 0)
-  
+
   return(mt2_errors)
 }
 
@@ -327,7 +366,7 @@ check_false_mt1 <- function(df){
     group_by(COD_PUERTO, FECHA, COD_BARCO, ESTRATO_RIM) %>%
     summarise(summatory = sum(EJEM_MEDIDOS)) %>%
     filter(summatory != 0)
-  
+
   return(mt1_errors)
 }
 
@@ -343,7 +382,7 @@ check_foreing_ship <- function(df){
     filter(grepl("^8\\d{5}",COD_BARCO)) %>%
     group_by(FECHA, COD_TIPO_MUE, COD_BARCO, COD_PUERTO, COD_ARTE, COD_ORIGEN, ESTRATO_RIM) %>%
     count(FECHA, COD_TIPO_MUE, COD_BARCO, COD_PUERTO, COD_ARTE, COD_ORIGEN, ESTRATO_RIM)
-  
+
   return(ships[, c("FECHA", "COD_TIPO_MUE", "COD_BARCO", "COD_PUERTO", "COD_ARTE", "COD_ORIGEN", "ESTRATO_RIM")])
 }
 
@@ -353,7 +392,7 @@ check_foreing_ship <- function(df){
 # ships_sireno <- merge(x=ships, y=maestro_flota_sireno, by.x = "COD_BARCO", by.y = "BARCOD", all.x = TRUE)
 
 # function to check mixed species keyed as non mixed species: in COD_ESP_MUE
-# there are codes from mixed species 
+# there are codes from mixed species
 # df: dataframe
 # return a dataframe with the samples with species keyed as non mixed species
 check_mixed_as_no_mixed <- function(df){
@@ -362,7 +401,7 @@ check_mixed_as_no_mixed <- function(df){
 }
 
 # function to check no mixed species keyed as mixed species: in COD_ESP_MUE
-# there are codes from mixed species 
+# there are codes from mixed species
 # df: dataframe
 # return a dataframe with the samples with species keyed as non mixed species
 check_no_mixed_as_mixed <- function(df){
@@ -375,40 +414,40 @@ check_no_mixed_as_mixed <- function(df){
 # df: dataframe
 # return: dataframe of samples with erroneus categories
 check_categories <- function(df){
-  
+
   maestro_categorias[["TRACK"]] <- "OK"
   df[["FECHA"]]<-as.POSIXct(df[["FECHA"]])
   errors <- merge(x = df, y = maestro_categorias, by.x = c("COD_PUERTO", "COD_ESP_MUE", "COD_CATEGORIA"), by.y = c("PUECOD", "ESPCOD", "ESPCAT"), all.x = TRUE)
-  errors <- errors %>% 
+  errors <- errors %>%
     filter(is.na(TRACK)) %>%
     select(COD_PUERTO, FECHA, COD_BARCO, COD_ESP_MUE, COD_CATEGORIA) %>%
     arrange(COD_PUERTO, FECHA, COD_BARCO, COD_ESP_MUE, COD_CATEGORIA)
   errors <- unique(errors)
-  
-  
+
+
   return (errors)
 }
 
 # ---- function to check if one category has two or more different P_MUE_DES ----------------------------------------
 #
-#' function to check if one category has two or more different P_MUE_DES. 
+#' function to check if one category has two or more different P_MUE_DES.
 #' Mostly, this cases correspond to mixed species or sexed species, but in other
 #' cases this can be an error in the keyed process by IPD:
 #' - in some mixed species, one category (0901) contains two 'species
 #' of the category'. For example Lophis piscatorius and L. budegassa, everyone
 #' with its own 'landing weight'. In the dumped in SIRENO, only the first of the
 #' 'landing weight' is used and the records with the second 'landing weight' are
-#' discarded. The correct way to introduce this samples in SIRENO is with 
+#' discarded. The correct way to introduce this samples in SIRENO is with
 #' the specie of the second 'landing weight' keyed like another category (0902)
-#' 
+#'
 #' With this function we obtain all the categories with two or more different
 #' 'landing weight'.
-# 
+#
 #' @param df: dataframe to modify
 #' @return Return a dataframe with all the categories with two or more different
 #' 'landing weight'
-#' 
-one_category_with_different_landing_weight <- function(df){
+#'
+one_category_with_different_landing_weights <- function(df){
   df <- df[,c(BASE_FIELDS, "COD_ESP_MUE", "COD_CATEGORIA", "P_MUE_DESEM")]
   df$FECHA <- as.POSIXct(df$FECHA)
   fields_to_count <- c(BASE_FIELDS, "COD_ESP_MUE", "COD_CATEGORIA")
@@ -427,11 +466,11 @@ one_category_with_different_landing_weight <- function(df){
 
 export_to_excel <- function(df){
   month_in_spanish <- c("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
-  
+
   # TODO: add this to import_IPD_file in sapmuebase
   df[["FECHA"]] <- format(df[["FECHA"]], "%d/%m/%Y")
-  
-  filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH)], "_2016.xlsx", sep="")
+
+  filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH_STRING)], "_2016.xlsx", sep="")
   filepath = paste(PATH_FILE, PATH_DATA, sep="")
   filepath = paste(filepath, filename, sep = "/")
 
@@ -445,11 +484,11 @@ export_to_excel <- function(df){
 # ---- function to add variable country ----------------------------------------
 #
 #' Add variable country code
-# 
+#
 #' Add variable country code (COD_PAIS) at the end of the dataframe
 #' @param df: dataframe to modify
 #' @return Return a dataframe with the variable country code
-#' 
+#'
 create_variable_code_country <- function(df){
   ships <- maestro_flota_sireno[,c("BARCOD", "PAICOD")]
   with_country <- merge(x = df, y = ships, by.x = "COD_BARCO", by.y = "BARCOD", all.x = TRUE)
@@ -462,7 +501,7 @@ create_variable_code_country <- function(df){
 
 
 # #### IMPORT FILE #############################################################
-records <- importIPDFile(paste(PATH_DATA,FILENAME, sep="/"), by_month = 9)
+records <- importIPDFile(paste(PATH_DATA,FILENAME, sep="/"), by_month = MONTH)
 
 # #### START CHECK #############################################################
 
@@ -495,44 +534,39 @@ check_duplicados_tipo_muestreo <- check_duplicates_type_sample(records)
 
 
 check_falsos_mt2 <- check_false_mt2(records)
-  records <- correct_levels_in_variable(records, "COD_TIPO_MUE", "MT2A", "MT1A", c("FECHA", "COD_BARCO"), c("2016-09-30","200849") )
-  records <- correct_levels_in_variable(records, "COD_TIPO_MUE", "MT2A", "MT1A", c("FECHA", "COD_BARCO"), c("2016-09-07","012438") )
-  records <- correct_levels_in_variable(records, "COD_TIPO_MUE", "MT2A", "MT1A", c("FECHA", "COD_BARCO"), c("2016-09-19","017006") )
 
 
 check_falsos_mt1 <- check_false_mt1(records)
 
 
 check_barcos_extranjeros <- check_foreing_ship(records)
-  records <- remove_trip(records, "2016-09-15", "MT1A", "800379", "0907", "102", "009", "BACA_CN")
-  records <- remove_trip(records, "2016-09-15", "MT1A", "800390", "0907", "102", "009", "BACA_CN")
-  records <- remove_trip(records, "2016-09-26", "MT2A", "800358", "0925", "102", "009", "JURELERA_CN")
+  # Remove MT1A trips with foreing vessel:
+  records <- remove_MT1_trips_foreing_vessels(records)
+
 
 check_especies_mezcla_no_mezcla <- check_mixed_as_no_mixed(records)
+check_especies_mezcla_no_mezcla <- humanize(check_especies_mezcla_no_mezcla)
+  #All the erros are Microchirus variegatus, that has to be recorded like Microchirus spp in Sampled Species
+  records <- correct_levels_in_variable(records, "COD_ESP_MUE", "10792", "10788")
 
 
 check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
-  # The erroneus specie is not 10261, it's 10267 Gaidropsarus vulgaris
-  # Asked to sup
-  maestro_categorias %>%
-              select(ESPCOD, ESPDESTAX) %>%
-              unique() %>%
-              filter(ESPDESTAX == "Gaidropsarus vulgaris")
-  # Correct COD_ESP_MUE and COD_ESP_CAT
-  records <- correct_levels_in_variable(records, "COD_ESP_MUE", "10261", "10267", c("FECHA", "COD_BARCO"), c("2016-09-20", "201773"))
-  records <- correct_levels_in_variable(records, "COD_ESP_CAT", "10261", "10267", c("FECHA", "COD_BARCO"), c("2016-09-20", "201773"))
 
-  
+
 check_categorias <- check_categories(records)
 # this categories has been already added to the SIRENO database
 
 
-check_one_category_with_different_landing_weight <- one_category_with_different_landing_weight(records)
-
-  
-check_one_category_with_different_landing_weight <- humanize(check_one_category_with_different_landing_weight)
-  errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weight, "COD_PUERTO")
-  exportListToCsv(errors_category)
+check_one_category_with_different_landing_weights <- one_category_with_different_landing_weights(records)
+# Create files to send to sups:
+check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
+  errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weights, "COD_PUERTO")
+  exportListToCsv(errors_category, suffix = paste0(
+                                              "_2016_",
+                                              MONTH,
+                                              "_errors_categorias_con_varios_pesos_desembarcados"))
+  #TODO: put the correct name to the files
+  #TODO: export to the correct path
 
 
 records <- create_variable_code_country(records)
