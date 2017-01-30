@@ -16,7 +16,7 @@
 # ---- PACKAGES ----------------------------------------------------------------
 
 library(plyr) # It's better to load plyr before dplyr
-library(dplyr) #arrange_()
+library(dplyr)
 library(tools) #file_ext()
 #library(stringr) #str_split()
 library(devtools) # Need this package to use install and install_github
@@ -61,13 +61,13 @@ PATH_ERRORS <- paste(PATH_FILE,"/errors",sep="")
 
 # #### RECOVERY DATA SETS ######################################################
 
-data(estrato_rim)
-data(puerto)
-data(maestro_flota_sireno)
-data(cfpo2015)
-data(especies_mezcla)
-data(especies_no_mezcla)
-data(maestro_categorias)
+# data(estrato_rim)
+# data(puerto)
+# data(maestro_flota_sireno)
+# data(cfpo2015)
+# data(especies_mezcla)
+# data(especies_no_mezcla)
+# data(maestro_categorias)
 
 # #### CONSTANS ################################################################
 
@@ -301,6 +301,9 @@ remove_MT1_trips_foreing_vessels <- function(df){
   return(df)
 }
 
+
+# TODO: remove this function, don't have any sense because in the import proccess
+# the month is selected
 # function to check the month: Check if all the data in the dataframe belongs to
 # the same month, allocated in MONTH variable
 # df: dataframe to check
@@ -415,11 +418,12 @@ check_no_mixed_as_mixed <- function(df){
 # return: dataframe of samples with erroneus categories
 check_categories <- function(df){
 
-  maestro_categorias[["TRACK"]] <- "OK"
+  maestro_categorias[["CONTROL"]] <- "OK"
   df[["FECHA"]]<-as.POSIXct(df[["FECHA"]])
+  #errors <- merge(x = df, y = maestro_categorias, by.x = c("COD_PUERTO", "COD_ESP_MUE", "COD_CATEGORIA"), by.y = c("COD_PUERTO", "COD_ESP", "COD_CATEGORIA"), all.x = TRUE)
   errors <- merge(x = df, y = maestro_categorias, by.x = c("COD_PUERTO", "COD_ESP_MUE", "COD_CATEGORIA"), by.y = c("PUECOD", "ESPCOD", "ESPCAT"), all.x = TRUE)
   errors <- errors %>%
-    filter(is.na(TRACK)) %>%
+    filter(is.na(CONTROL)) %>%
     select(COD_PUERTO, FECHA, COD_BARCO, COD_ESP_MUE, COD_CATEGORIA) %>%
     arrange(COD_PUERTO, FECHA, COD_BARCO, COD_ESP_MUE, COD_CATEGORIA)
   errors <- unique(errors)
@@ -435,7 +439,7 @@ check_categories <- function(df){
 #' cases this can be an error in the keyed process by IPD:
 #' - in some mixed species, one category (0901) contains two 'species
 #' of the category'. For example Lophis piscatorius and L. budegassa, everyone
-#' with its own 'landing weight'. In the dumped in SIRENO, only the first of the
+#' with its own 'landing weight'. In the saved process in SIRENO, only the first of the
 #' 'landing weight' is used and the records with the second 'landing weight' are
 #' discarded. The correct way to introduce this samples in SIRENO is with
 #' the specie of the second 'landing weight' keyed like another category (0902)
@@ -554,19 +558,28 @@ check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 
 check_categorias <- check_categories(records)
-# this categories has been already added to the SIRENO database
+  check_categorias <- humanize(check_categorias)
+  # 2 errors in categories: CHECK IN SIRENO  
 
+  #10864  206142  1417  2016-11-28
+  cat1 <- records[records$FECHA=="2016-11-28" & records$COD_BARCO=="206142" & records$COD_ESP_MUE=="10864",]
+  cat1_master <- maestro_categorias %>%
+                  filter(PUECOD=="1417", ESPCOD=="10864")
+  records <- correct_levels_in_variable(records, "COD_CATEGORIA", "0402", "1411", c("COD_PUERTO", "COD_ESP_MUE"), c("1417", "10864"))
+  
+  #0907  2016-11-15  011790  30156  0905
+  cat2 <- records %>% filter(FECHA=="2016-11-15", COD_BARCO=="011790", COD_ESP_MUE=="30156")
+  cat2_master <- maestro_categorias %>% filter(PUECOD=="0907", ESPCOD=="30156")
+  records <- correct_levels_in_variable(records, "COD_CATEGORIA", "0905", "0901", c("COD_PUERTO", "COD_ESP_MUE"), c("0907", "30156"))  
 
 check_one_category_with_different_landing_weights <- one_category_with_different_landing_weights(records)
 # Create files to send to sups:
 check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
   errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weights, "COD_PUERTO")
-  exportListToCsv(errors_category, suffix = paste0(
-                                              "_2016_",
-                                              MONTH,
-                                              "_errors_categorias_con_varios_pesos_desembarcados"))
-  #TODO: put the correct name to the files
-  #TODO: export to the correct path
+  suf <- paste("_", YEAR, MONTH, "_errors_categorias_con_varios_pesos_desembarcados", sep="_")
+  exportListToCsv(errors_category, suffix = suf)
+  #TODO: export to the right path
+
 
 
 records <- create_variable_code_country(records)

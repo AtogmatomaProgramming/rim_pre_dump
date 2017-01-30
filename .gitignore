@@ -4,6 +4,7 @@
 .RData
 .Ruserdata
 IPDtoSIRENO.Rproj
-
+*.xls
+*.xlsx
 #all files in data directory
 /data/*
