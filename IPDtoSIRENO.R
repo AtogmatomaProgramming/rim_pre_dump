@@ -41,11 +41,11 @@ MESSAGE_ERRORS<- list() #list with the errors
 
 setwd("F:/misdoc/sap/IPDtoSIRENO/")
 
-PATH_DATA<- "/data/noviembre"
+PATH_DATA<- "/data/diciembre"
 
-FILENAME <- "muestreos_especie_11_ICES.txt"
+FILENAME <- "muestreos_especie_meses_12_ICES.txt"
 
-MONTH <- 11
+MONTH <- 12
 
 YEAR <- "2016"
 
@@ -172,11 +172,14 @@ check_variable_with_master <- function (variable){
   errors <- subset(errors, is.na(get(variable_to_filter)))
   #prepare to return
   fields_to_filter <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_ARTE", "COD_ORIGEN", "COD_TIPO_MUE", "PROCEDENCIA")
-
-  errors <- errors[,fields_to_filter]
+  
   errors$FECHA <- as.POSIXct(errors$FECHA)
-  errors <- arrange_(errors, fields_to_filter)
-  errors <- unique(errors)
+  
+  errors <- errors %>%
+    select(one_of(fields_to_filter))%>%
+    arrange_(fields_to_filter)%>%
+    unique()
+
   #return
   return(errors)
 }
@@ -525,6 +528,8 @@ check_origen <- check_variable_with_master("COD_ORIGEN")
 
 
 check_procedencia <- check_variable_with_master("PROCEDENCIA")
+# Two trips with 'IIM'
+records <- correct_levels_in_variable(records, "PROCEDENCIA", "IIM", "IEO")
 
 
 check_tipo_muestreo <- check_variable_with_master("COD_TIPO_MUE")
@@ -544,14 +549,11 @@ check_falsos_mt1 <- check_false_mt1(records)
 
 
 check_barcos_extranjeros <- check_foreing_ship(records)
-  # Remove MT1A trips with foreing vessel:
+  # There is one MT1A trip with foreing vessel:
   records <- remove_MT1_trips_foreing_vessels(records)
 
 
 check_especies_mezcla_no_mezcla <- check_mixed_as_no_mixed(records)
-check_especies_mezcla_no_mezcla <- humanize(check_especies_mezcla_no_mezcla)
-  #All the erros are Microchirus variegatus, that has to be recorded like Microchirus spp in Sampled Species
-  records <- correct_levels_in_variable(records, "COD_ESP_MUE", "10792", "10788")
 
 
 check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
@@ -559,18 +561,16 @@ check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 check_categorias <- check_categories(records)
   check_categorias <- humanize(check_categorias)
-  # 2 errors in categories: CHECK IN SIRENO  
-
-  #10864  206142  1417  2016-11-28
-  cat1 <- records[records$FECHA=="2016-11-28" & records$COD_BARCO=="206142" & records$COD_ESP_MUE=="10864",]
-  cat1_master <- maestro_categorias %>%
-                  filter(PUECOD=="1417", ESPCOD=="10864")
-  records <- correct_levels_in_variable(records, "COD_CATEGORIA", "0402", "1411", c("COD_PUERTO", "COD_ESP_MUE"), c("1417", "10864"))
+  # 2 errors in categories: CHECK IN SIRENO
+  # - 10864 1417 1418 y 1419 --> correct in sireno
+  # - 30156 0907 0905 --> fix:
+  rajidae0905 <- records %>%
+              filter(COD_ESP_MUE == "30156", COD_PUERTO == "0907") %>%
+              select(COD_PUERTO, FECHA, COD_BARCO, COD_ESP_MUE, COD_CATEGORIA, COD_TIPO_MUE) %>%
+              unique
+  records <- correct_levels_in_variable(records, "COD_CATEGORIA", "0905", "0901", c("COD_ESP_MUE", "COD_PUERTO"), c("30156", "0907"))
   
-  #0907  2016-11-15  011790  30156  0905
-  cat2 <- records %>% filter(FECHA=="2016-11-15", COD_BARCO=="011790", COD_ESP_MUE=="30156")
-  cat2_master <- maestro_categorias %>% filter(PUECOD=="0907", ESPCOD=="30156")
-  records <- correct_levels_in_variable(records, "COD_CATEGORIA", "0905", "0901", c("COD_PUERTO", "COD_ESP_MUE"), c("0907", "30156"))  
+
 
 check_one_category_with_different_landing_weights <- one_category_with_different_landing_weights(records)
 # Create files to send to sups:
