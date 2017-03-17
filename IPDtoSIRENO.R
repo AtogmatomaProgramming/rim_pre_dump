@@ -41,13 +41,13 @@ MESSAGE_ERRORS<- list() #list with the errors
 
 setwd("F:/misdoc/sap/IPDtoSIRENO/")
 
-PATH_DATA<- "/data/diciembre"
+PATH_DATA<- "/data/2017/2017-01"
 
-FILENAME <- "muestreos_especie_meses_12_ICES.txt"
+FILENAME <- "muestreos_1_ICES.txt"
 
-MONTH <- 12
+MONTH <- 1
 
-YEAR <- "2016"
+YEAR <- "2017"
 
 #                                                                              #
 ################################################################################
@@ -470,7 +470,7 @@ one_category_with_different_landing_weights <- function(df){
 #    Try installr::install.rtools() on Windows.
 # run:Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
 # source: https://github.com/awalker89/openxlsx/issues/111
-
+#
 export_to_excel <- function(df){
   month_in_spanish <- c("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
 
@@ -488,13 +488,13 @@ export_to_excel <- function(df){
 }
 
 
-# ---- function to add variable country ----------------------------------------
+# ---- function to add country variable ----------------------------------------
 #
 #' Add variable country code
 #
 #' Add variable country code (COD_PAIS) at the end of the dataframe
 #' @param df: dataframe to modify
-#' @return Return a dataframe with the variable country code
+#' @return Return a dataframe with the country code variable
 #'
 create_variable_code_country <- function(df){
   ships <- maestro_flota_sireno[,c("BARCOD", "PAICOD")]
@@ -504,6 +504,23 @@ create_variable_code_country <- function(df){
   with_country <- with_country[,c(2,3,1,4:length(with_country))]
   names(with_country)[names(with_country) == "PAICOD"] <- "COD_PAIS"
   return (with_country)
+}
+
+# ---- function to fix MEDIDA variable -----------------------------------------
+#
+#' Change the content of variable MEDIDA to "T" ("Tallas", lenghts).
+#' 
+#' All the data are lenthts samples so this variable can't be "P" ("Pesos", weights)
+#' or empty. 
+#
+#' @param df: dataframe to modify
+#' @return Return a dataframe with the MEDIDA variable fixed
+#'
+fix_medida_variable <- function (df) {
+  
+  df[["MEDIDA"]] <- "T"
+  return(df)
+  
 }
 
 
@@ -528,8 +545,6 @@ check_origen <- check_variable_with_master("COD_ORIGEN")
 
 
 check_procedencia <- check_variable_with_master("PROCEDENCIA")
-# Two trips with 'IIM'
-records <- correct_levels_in_variable(records, "PROCEDENCIA", "IIM", "IEO")
 
 
 check_tipo_muestreo <- check_variable_with_master("COD_TIPO_MUE")
@@ -560,27 +575,19 @@ check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 
 check_categorias <- check_categories(records)
-  check_categorias <- humanize(check_categorias)
-  # 2 errors in categories: CHECK IN SIRENO
-  # - 10864 1417 1418 y 1419 --> correct in sireno
-  # - 30156 0907 0905 --> fix:
-  rajidae0905 <- records %>%
-              filter(COD_ESP_MUE == "30156", COD_PUERTO == "0907") %>%
-              select(COD_PUERTO, FECHA, COD_BARCO, COD_ESP_MUE, COD_CATEGORIA, COD_TIPO_MUE) %>%
-              unique
-  records <- correct_levels_in_variable(records, "COD_CATEGORIA", "0905", "0901", c("COD_ESP_MUE", "COD_PUERTO"), c("30156", "0907"))
-  
+  #check_categorias <- humanize(check_categorias)
+  # all the errros are false positives (this categories are already added to SIRENO)
 
 
 check_one_category_with_different_landing_weights <- one_category_with_different_landing_weights(records)
 # Create files to send to sups:
-check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
-  errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weights, "COD_PUERTO")
-  suf <- paste("_", YEAR, MONTH, "_errors_categorias_con_varios_pesos_desembarcados", sep="_")
-  exportListToCsv(errors_category, suffix = suf)
+# check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
+#   errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weights, "COD_PUERTO")
+#   suf <- paste("_", YEAR, MONTH, "_errors_categorias_con_varios_pesos_desembarcados", sep="_")
+#   exportListToCsv(errors_category, suffix = suf)
   #TODO: export to the right path
 
-
+records <- fix_medida_variable(records)
 
 records <- create_variable_code_country(records)
 
