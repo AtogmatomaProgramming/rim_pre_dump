@@ -519,7 +519,7 @@ create_variable_code_country <- function(df){
 fix_medida_variable <- function (df) {
 
   if ("TALL.PESO" %in% colnames(df)){
-    df[["TALL.PESO"]] <- TRUE
+    df[["TALL.PESO"]] <- "T"
     return(df)
   } else {
     stop(paste0("TALL.PESO doesn't exists in ", substitute(df)))
