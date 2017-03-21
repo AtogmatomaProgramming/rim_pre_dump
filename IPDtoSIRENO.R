@@ -517,9 +517,13 @@ create_variable_code_country <- function(df){
 #' @return Return a dataframe with the MEDIDA variable fixed
 #'
 fix_medida_variable <- function (df) {
-  
-  df[["MEDIDA"]] <- "T"
-  return(df)
+
+  if ("TALL.PESO" %in% colnames(df)){
+    df[["TALL.PESO"]] <- TRUE
+    return(df)
+  } else {
+    stop(paste0("TALL.PESO doesn't exists in ", substitute(df)))
+  }
   
 }
 
