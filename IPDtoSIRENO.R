@@ -518,8 +518,8 @@ create_variable_code_country <- function(df){
 #'
 fix_medida_variable <- function (df) {
 
-  if ("TALL.PESO" %in% colnames(df)){
-    df[["TALL.PESO"]] <- "T"
+  if ("MEDIDA" %in% colnames(df)){
+    df[["MEDIDA"]] <- "T"
     return(df)
   } else {
     stop(paste0("TALL.PESO doesn't exists in ", substitute(df)))
@@ -597,7 +597,7 @@ records <- create_variable_code_country(records)
 
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
-export_to_excel(records)
+# export_to_excel(records)
 
 
 
