@@ -41,11 +41,11 @@ MESSAGE_ERRORS<- list() #list with the errors
 
 setwd("F:/misdoc/sap/IPDtoSIRENO/")
 
-PATH_DATA<- "/data/2017/2017-01"
+PATH_DATA<- paste0(getwd(), "/data/2017/2017-02")
 
-FILENAME <- "muestreos_1_ICES.txt"
+FILENAME <- "muestreos_2_ICES.txt"
 
-MONTH <- 1
+MONTH <- 2
 
 YEAR <- "2017"
 
@@ -55,9 +55,9 @@ YEAR <- "2017"
 PATH_FILE <- getwd()
 MONTH_STRING <- sprintf("%02d", MONTH)
 LOG_FILE <- paste("LOG_", YEAR, "_", MONTH_STRING, ".csv", sep="")
-PATH_LOG_FILE <- file.path(paste(PATH_FILE, PATH_DATA, LOG_FILE, sep = "/"))
-PATH_BACKUP_FILE <- file.path(paste(PATH_FILE, PATH_DATA, "backup", sep = "/"))
-PATH_ERRORS <- paste(PATH_FILE,"/errors",sep="")
+PATH_LOG_FILE <- file.path(paste(PATH_DATA, LOG_FILE, sep = "/"))
+PATH_BACKUP_FILE <- file.path(paste(PATH_DATA, "backup", sep = "/"))
+PATH_ERRORS <- paste(PATH_DATA,"/errors",sep="")
 
 # #### RECOVERY DATA SETS ######################################################
 
@@ -98,7 +98,7 @@ exportTrackingFile<- function(){
   operation_code <- read_operation_code()
   filename <- file_path_sans_ext(FILENAME)
   filename <- paste(filename, operation_code, sep="_")
-  filename <- paste(PATH_FILE, PATH_DATA, filename, sep="/")
+  filename <- paste(PATH_DATA, filename, sep="/")
   filename <- paste(filename,  ".csv", sep="")
   write.csv(records, filename, quote = FALSE, row.names = FALSE)
 }
@@ -478,8 +478,7 @@ export_to_excel <- function(df){
   df[["FECHA"]] <- format(df[["FECHA"]], "%d/%m/%Y")
 
   filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH_STRING)], "_2016.xlsx", sep="")
-  filepath = paste(PATH_FILE, PATH_DATA, sep="")
-  filepath = paste(filepath, filename, sep = "/")
+  filepath = paste(PATH_DATA, filename, sep = "/")
 
   colnames(df) <- c("FECHA","PUERTO","BUQUE","ARTE","ORIGEN","METIER","PROYECTO","TIPO MUESTREO","NRECHAZOS","NBARCOS MUESTREADOS","CUADRICULA","LAT DECIMAL","LON DECIMAL","DIAS_MAR","PESO_TOTAL","COD_ESP_TAX","TIPO_MUESTREO","PROCEDENCIA","COD_CATEGORIA","PESO","COD_ESP_MUE","SEXO","PESO MUESTRA","MEDIDA","TALLA","NEJEMPLARES","COD_PUERTO_DESCARGA","COD_PAIS")
 
@@ -529,7 +528,7 @@ fix_medida_variable <- function (df) {
 
 
 # #### IMPORT FILE #############################################################
-records <- importIPDFile(paste(PATH_DATA,FILENAME, sep="/"), by_month = MONTH)
+records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_DATA)
 
 # #### START CHECK #############################################################
 
@@ -579,16 +578,16 @@ check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 
 check_categorias <- check_categories(records)
-  #check_categorias <- humanize(check_categorias)
+  # check_categorias <- humanize(check_categorias)
   # all the errros are false positives (this categories are already added to SIRENO)
 
 
 check_one_category_with_different_landing_weights <- one_category_with_different_landing_weights(records)
 # Create files to send to sups:
-# check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
-#   errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weights, "COD_PUERTO")
-#   suf <- paste("_", YEAR, MONTH, "_errors_categorias_con_varios_pesos_desembarcados", sep="_")
-#   exportListToCsv(errors_category, suffix = suf)
+ check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
+   errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weights, "COD_PUERTO")
+   suf <- paste("_", YEAR, MONTH, "_errors_categorias_con_varios_pesos_desembarcados", sep="_")
+   exportListToCsv(errors_category, suffix = suf, path = PATH_DATA)
   #TODO: export to the right path
 
 records <- fix_medida_variable(records)
@@ -597,7 +596,7 @@ records <- create_variable_code_country(records)
 
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
-# export_to_excel(records)
+export_to_excel(records)
 
 
 
