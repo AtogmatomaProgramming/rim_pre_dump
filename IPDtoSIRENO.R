@@ -3,12 +3,10 @@
 ####
 #### Return csv files with errors detected
 ####
-#### author: Marco A. Amez Fernandez
+#### author: Marco A. Ámez Fernandez
 #### email: ieo.marco.a.amez@gmail.com
-#### date of last modification: 23/11/2016
-#### version: 0.95
 ####
-#### files required: file from IPD with data to record in SIRENO
+#### files required: file from IPD with data to save in SIRENO
 
 
 # #### CONFIG ##################################################################
@@ -34,18 +32,18 @@ library(openxlsx)
 
 # ---- GLOBAL VARIABLES --------------------------------------------------------
 ERRORS <- list() #list with all errors found in dataframes
-MESSAGE_ERRORS<- list() #list with the errors
+#MESSAGE_ERRORS<- list() #list with the errors
 
 ################################################################################
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES:                                      #
 
 setwd("F:/misdoc/sap/IPDtoSIRENO/")
 
-PATH_DATA<- paste0(getwd(), "/data/2017/2017-02")
+PATH_DATA<- paste0(getwd(), "/data/2017/2017-03")
 
-FILENAME <- "muestreos_2_ICES.txt"
+FILENAME <- "muestreos_3_2017_ICES.txt"
 
-MONTH <- 2
+MONTH <- 3
 
 YEAR <- "2017"
 
@@ -142,20 +140,16 @@ export_log_file <- function(action, variable, erroneus_data="", correct_data="",
 # ---- function to ckeck variables ---------------------------------------------
 #' Check variables
 #
-#' Check if the value of variables are consistents to the value in its SIRENO master.
+#' Check if the value of variables are consistent whit the SIRENO masters.
 #' It's only available for variables with a data source (master): ESTRATO_RIM, COD_PUERTO,
 #' COD_ORIGEN, COD_ARTE, COD_PROCEDENCIA and TIPO_MUESTREO
-#' @param variable: one of this values: ESTRATO_RIM, COD_PUERTO, COD_ORIGEN,
-#' COD_ARTE, COD_PROCEDENCIA or TIPO_MUESTREO
+#' @param variable: one of this variables: ESTRATO_RIM, COD_PUERTO, COD_ORIGEN,
+#' COD_ARTE or COD_PROCEDENCIA
 #' @return Return a dataframe with samples containing erroneus variables
-check_variable_with_master <- function (variable){
+check_variable_with_master <- function (variable, df){
 
-  if(variable != "ESTRATO_RIM" &&
-     variable != "COD_PUERTO" &&
-     variable != "COD_ORIGEN" &&
-     variable != "COD_ARTE" &&
-     variable != "PROCEDENCIA" &&
-     variable != "COD_TIPO_MUE"){
+  valid_variables = c("ESTRATO_RIM","COD_PUERTO","COD_ORIGEN","COD_ARTE","PROCEDENCIA")
+  if (!(variable %in% valid_variables)) {
     stop(paste("This function is not available for ", variable))
   }
 
@@ -166,14 +160,15 @@ check_variable_with_master <- function (variable){
     variable <- variable[[1]][2]
   }
   name_data_set <- tolower(variable)
-  #search the errors in variable
-  errors <- merge(x = records, y = get(name_data_set), all.x = TRUE)
-  variable_to_filter <- names(errors[length(errors)])
-  errors <- subset(errors, is.na(get(variable_to_filter)))
+  
+  df$FECHA <- as.POSIXct(df$FECHA)
+  df$FECHA_DESEM <- as.POSIXct(df$FECHA_DESEM)
+
+  errors <- anti_join(x = df, y = get(name_data_set))
+    
   #prepare to return
   fields_to_filter <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_ARTE", "COD_ORIGEN", "COD_TIPO_MUE", "PROCEDENCIA")
   
-  errors$FECHA <- as.POSIXct(errors$FECHA)
   
   errors <- errors %>%
     select(one_of(fields_to_filter))%>%
@@ -185,9 +180,7 @@ check_variable_with_master <- function (variable){
 }
 
 
-# ---- Change levels in a variable of a dataframe ---------------------------------------------
-#' Change levels
-#'
+# ---- Change levels in a variable of a dataframe ------------------------------
 #' function to change levels in a variable of a dataframe. Add record to Log file
 #' and export file.
 #' @param df: dataframe
@@ -251,8 +244,8 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
 
 
 # function to remove trip. Add record to Log file and export file.
-# It's imperative the next data to identify a trip:
-# date, cod_type_sample, cod_ship, cod_port, cod_gear, cod_origin and rim_stratum
+# It's imperative this data to identify a trip:
+# FECHA, COD_TIPO_MUESTRA, COD_BARCO, COD_PUERTO, COD_ARTE, COD_ORIGEN and ESTRATO_RIM
 # df: dataframe
 # return: dataframe without the deleted trips
 remove_trip <- function(df, date, cod_type_sample, cod_ship, cod_port, cod_gear, cod_origin, rim_stratum){
@@ -274,6 +267,7 @@ remove_trip <- function(df, date, cod_type_sample, cod_ship, cod_port, cod_gear,
 remove_MT1_trips_foreing_vessels <- function(df){
   
   df[["FECHA"]] <- as.POSIXct(df[["FECHA"]])
+  df$FECHA_DESEM <- as.POSIXct(df$FECHA_DESEM)
 
   #obtain MT1 trips with foreing vessels
   mt1_foreing <- df %>%
@@ -351,6 +345,7 @@ check_duplicates_type_sample <- function(df){
 check_false_mt2 <- function(df){
   dataframe <- df
   dataframe$FECHA <- as.POSIXct(dataframe$FECHA)
+  dataframe$FECHA_DESEM <- as.POSIXct(dataframe$FECHA_DESEM)
   mt2_errors <- dataframe %>%
     filter(COD_TIPO_MUE=="MT2A") %>%
     group_by(COD_PUERTO, FECHA, COD_BARCO, ESTRATO_RIM) %>%
@@ -367,6 +362,7 @@ check_false_mt2 <- function(df){
 check_false_mt1 <- function(df){
   dataframe <- df
   dataframe$FECHA <- as.POSIXct(dataframe$FECHA)
+  dataframe$FECHA_DESEM <- as.POSIXct(dataframe$FECHA_DESEM)
   mt1_errors <- dataframe %>%
     filter(COD_TIPO_MUE=="MT1A") %>%
     group_by(COD_PUERTO, FECHA, COD_BARCO, ESTRATO_RIM) %>%
@@ -383,6 +379,7 @@ check_false_mt1 <- function(df){
 check_foreing_ship <- function(df){
   dataframe <- df
   dataframe$FECHA <- as.POSIXct(dataframe$FECHA)
+  dataframe$FECHA_DESEM <- as.POSIXct(dataframe$FECHA_DESEM)
   dataframe$COD_BARCO <- as.character(dataframe$COD_BARCO)
   ships <- dataframe %>%
     filter(grepl("^8\\d{5}",COD_BARCO)) %>%
@@ -397,19 +394,19 @@ check_foreing_ship <- function(df){
 # colnames(ships) <- "COD_BARCO"
 # ships_sireno <- merge(x=ships, y=maestro_flota_sireno, by.x = "COD_BARCO", by.y = "BARCOD", all.x = TRUE)
 
-# function to check mixed species keyed as non mixed species: in COD_ESP_MUE
+# function to check mixed species saved as non mixed species: in COD_ESP_MUE
 # there are codes from mixed species
 # df: dataframe
-# return a dataframe with the samples with species keyed as non mixed species
+# return a dataframe with the samples with species saved as non mixed species
 check_mixed_as_no_mixed <- function(df){
   non_mixed <- merge(x=df, y=especies_mezcla["COD_ESP_CAT"], by.x = "COD_ESP_MUE", by.y = "COD_ESP_CAT")
   return(non_mixed)
 }
 
-# function to check no mixed species keyed as mixed species: in COD_ESP_MUE
+# function to check no mixed species saved as mixed species: in COD_ESP_MUE
 # there are codes from mixed species
 # df: dataframe
-# return a dataframe with the samples with species keyed as non mixed species
+# return a dataframe with the samples with species saved as non mixed species
 check_no_mixed_as_mixed <- function(df){
   non_mixed <- merge(x=records, y=especies_no_mezcla["COD_ESP"], by.x = "COD_ESP_MUE", by.y = "COD_ESP")
   return(non_mixed)
@@ -435,7 +432,7 @@ check_categories <- function(df){
   return (errors)
 }
 
-# ---- function to check if one category has two or more different P_MUE_DES ----------------------------------------
+# ---- function to check if one category has two or more different P_MUE_DES ---
 #
 #' function to check if one category has two or more different P_MUE_DES.
 #' Mostly, this cases correspond to mixed species or sexed species, but in other
@@ -477,12 +474,13 @@ export_to_excel <- function(df){
   # TODO: add this to import_IPD_file in sapmuebase
   df[["FECHA"]] <- format(df[["FECHA"]], "%d/%m/%Y")
 
-  filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH_STRING)], "_2016.xlsx", sep="")
+  filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH_STRING)], "_", YEAR, ".xlsx", sep="")
   filepath = paste(PATH_DATA, filename, sep = "/")
 
-  colnames(df) <- c("FECHA","PUERTO","BUQUE","ARTE","ORIGEN","METIER","PROYECTO","TIPO MUESTREO","NRECHAZOS","NBARCOS MUESTREADOS","CUADRICULA","LAT DECIMAL","LON DECIMAL","DIAS_MAR","PESO_TOTAL","COD_ESP_TAX","TIPO_MUESTREO","PROCEDENCIA","COD_CATEGORIA","PESO","COD_ESP_MUE","SEXO","PESO MUESTRA","MEDIDA","TALLA","NEJEMPLARES","COD_PUERTO_DESCARGA","COD_PAIS")
+  colnames(df) <- c("FECHA","PUERTO","BUQUE","ARTE","ORIGEN","METIER","PROYECTO","TIPO MUESTREO","NRECHAZOS","NBARCOS MUESTREADOS","CUADRICULA","LAT DECIMAL","LON DECIMAL","DIAS_MAR","PESO_TOTAL","COD_ESP_TAX","TIPO_MUESTREO","PROCEDENCIA","COD_CATEGORIA","PESO","COD_ESP_MUE","SEXO","PESO MUESTRA","MEDIDA","TALLA","NEJEMPLARES","COD_PUERTO_DESCARGA", "FECHA_DESEM", "COD_PAIS")
 
   df[["FECHA"]] <- as.character(df[["FECHA"]]) #it's mandatory convert date to character. I don't know why.
+  df[["FECHA_DESEM"]] <- as.character(df[["FECHA_DESEM"]])  
   write.xlsx(df, filepath, keepNA=TRUE, colnames=TRUE)
 }
 
@@ -531,26 +529,29 @@ fix_medida_variable <- function (df) {
 records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_DATA)
 
 # #### START CHECK #############################################################
+# if any error is detected use function:
+# correct_levels_in_variable(df, variable, erroneus_data, correct_data, conditional_variables, conditions)
+# to fix it. This function return the 'df' already corrected, so you have to assign
+# the data returned to the records dataframe: records <- correct_level_in_variable.
 
 check_mes <- check_month(records)
 
 
-check_estrato_rim <- check_variable_with_master("ESTRATO_RIM")
+check_estrato_rim <- check_variable_with_master("ESTRATO_RIM", records)
 
 
-check_puerto <- check_variable_with_master("COD_PUERTO")
+check_puerto <- check_variable_with_master("COD_PUERTO", records)
 
 
-check_arte <- check_variable_with_master("COD_ARTE")
+check_arte <- check_variable_with_master("COD_ARTE", records)
+  # There is one mistake:
+records <- correct_levels_in_variable(records, "COD_ARTE", "208", "201")
 
 
-check_origen <- check_variable_with_master("COD_ORIGEN")
+check_origen <- check_variable_with_master("COD_ORIGEN", records)
 
 
-check_procedencia <- check_variable_with_master("PROCEDENCIA")
-
-
-check_tipo_muestreo <- check_variable_with_master("COD_TIPO_MUE")
+check_procedencia <- check_variable_with_master("PROCEDENCIA", records)
 
 
 # TODO: add check_type_sample to check_variable_with_master
@@ -567,7 +568,9 @@ check_falsos_mt1 <- check_false_mt1(records)
 
 
 check_barcos_extranjeros <- check_foreing_ship(records)
-  # There is one MT1A trip with foreing vessel:
+# The function remove_MT1_trips_foreing_vessels(df) remove all the MT1 trips
+# with foreing vessels.
+# There is one MT1A trip with foreing vessel:
   records <- remove_MT1_trips_foreing_vessels(records)
 
 
@@ -579,19 +582,26 @@ check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 check_categorias <- check_categories(records)
   # check_categorias <- humanize(check_categorias)
-  # all the errros are false positives (this categories are already added to SIRENO)
 
 
+# Sometimes, one category with various species of the category has various landing weights.
+# This is nos possible to save in this way in SIRENO, so with one_category_with_different_landing_weights(df)
+# this species are detected. This errors are separated by influece area and
+# must be send to the sups
 check_one_category_with_different_landing_weights <- one_category_with_different_landing_weights(records)
 # Create files to send to sups:
  check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
    errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weights, "COD_PUERTO")
    suf <- paste("_", YEAR, MONTH, "_errors_categorias_con_varios_pesos_desembarcados", sep="_")
    exportListToCsv(errors_category, suffix = suf, path = PATH_DATA)
-  #TODO: export to the right path
+  
 
+# All the data saved by IPD are lenthts samples so the MEDIDA variable can't be "P" ("Pesos", weights)
+# or empty. The function fix_medida_variable(df) fix it:
 records <- fix_medida_variable(records)
 
+# By default, the IPD file hasn't the coutry variable filled. With
+# create_variable_code_country(df) funcion fix it:
 records <- create_variable_code_country(records)
 
 # source: https://github.com/awalker89/openxlsx/issues/111
