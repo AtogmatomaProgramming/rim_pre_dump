@@ -57,16 +57,6 @@ PATH_LOG_FILE <- file.path(paste(PATH_DATA, LOG_FILE, sep = "/"))
 PATH_BACKUP_FILE <- file.path(paste(PATH_DATA, "backup", sep = "/"))
 PATH_ERRORS <- paste(PATH_DATA,"/errors",sep="")
 
-# #### RECOVERY DATA SETS ######################################################
-
-# data(estrato_rim)
-# data(puerto)
-# data(maestro_flota_sireno)
-# data(cfpo2015)
-# data(especies_mezcla)
-# data(especies_no_mezcla)
-# data(maestro_categorias)
-
 # #### CONSTANS ################################################################
 
 # list with the common fields used in all tables
@@ -161,9 +151,6 @@ check_variable_with_master <- function (variable, df){
   }
   name_data_set <- tolower(variable)
   
-  df$FECHA <- as.POSIXct(df$FECHA)
-  df$FECHA_DESEM <- as.POSIXct(df$FECHA_DESEM)
-
   errors <- anti_join(x = df, y = get(name_data_set))
     
   #prepare to return
@@ -265,9 +252,6 @@ remove_trip <- function(df, date, cod_type_sample, cod_ship, cod_port, cod_gear,
 # df: dataframe
 # return: dataframe without the deleted trips
 remove_MT1_trips_foreing_vessels <- function(df){
-  
-  df[["FECHA"]] <- as.POSIXct(df[["FECHA"]])
-  df$FECHA_DESEM <- as.POSIXct(df$FECHA_DESEM)
 
   #obtain MT1 trips with foreing vessels
   mt1_foreing <- df %>%
@@ -344,8 +328,6 @@ check_duplicates_type_sample <- function(df){
 # return: dataframe with erroneus samples
 check_false_mt2 <- function(df){
   dataframe <- df
-  dataframe$FECHA <- as.POSIXct(dataframe$FECHA)
-  dataframe$FECHA_DESEM <- as.POSIXct(dataframe$FECHA_DESEM)
   mt2_errors <- dataframe %>%
     filter(COD_TIPO_MUE=="MT2A") %>%
     group_by(COD_PUERTO, FECHA, COD_BARCO, ESTRATO_RIM) %>%
@@ -361,8 +343,6 @@ check_false_mt2 <- function(df){
 # return: dataframe with erroneus samples
 check_false_mt1 <- function(df){
   dataframe <- df
-  dataframe$FECHA <- as.POSIXct(dataframe$FECHA)
-  dataframe$FECHA_DESEM <- as.POSIXct(dataframe$FECHA_DESEM)
   mt1_errors <- dataframe %>%
     filter(COD_TIPO_MUE=="MT1A") %>%
     group_by(COD_PUERTO, FECHA, COD_BARCO, ESTRATO_RIM) %>%
@@ -378,8 +358,6 @@ check_false_mt1 <- function(df){
 # return: dataframe with foreing ships and COD_TIPO_MUE
 check_foreing_ship <- function(df){
   dataframe <- df
-  dataframe$FECHA <- as.POSIXct(dataframe$FECHA)
-  dataframe$FECHA_DESEM <- as.POSIXct(dataframe$FECHA_DESEM)
   dataframe$COD_BARCO <- as.character(dataframe$COD_BARCO)
   ships <- dataframe %>%
     filter(grepl("^8\\d{5}",COD_BARCO)) %>%
@@ -419,7 +397,6 @@ check_no_mixed_as_mixed <- function(df){
 check_categories <- function(df){
 
   maestro_categorias[["CONTROL"]] <- "OK"
-  df[["FECHA"]]<-as.POSIXct(df[["FECHA"]])
   #errors <- merge(x = df, y = maestro_categorias, by.x = c("COD_PUERTO", "COD_ESP_MUE", "COD_CATEGORIA"), by.y = c("COD_PUERTO", "COD_ESP", "COD_CATEGORIA"), all.x = TRUE)
   errors <- merge(x = df, y = maestro_categorias, by.x = c("COD_PUERTO", "COD_ESP_MUE", "COD_CATEGORIA"), by.y = c("PUECOD", "ESPCOD", "ESPCAT"), all.x = TRUE)
   errors <- errors %>%
@@ -453,7 +430,6 @@ check_categories <- function(df){
 #'
 one_category_with_different_landing_weights <- function(df){
   df <- df[,c(BASE_FIELDS, "COD_ESP_MUE", "COD_CATEGORIA", "P_MUE_DESEM")]
-  df$FECHA <- as.POSIXct(df$FECHA)
   fields_to_count <- c(BASE_FIELDS, "COD_ESP_MUE", "COD_CATEGORIA")
   df_filtrado <- df %>%
     distinct() %>%
@@ -470,9 +446,6 @@ one_category_with_different_landing_weights <- function(df){
 #
 export_to_excel <- function(df){
   month_in_spanish <- c("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
-
-  # TODO: add this to import_IPD_file in sapmuebase
-  df[["FECHA"]] <- format(df[["FECHA"]], "%d/%m/%Y")
 
   filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH_STRING)], "_", YEAR, ".xlsx", sep="")
   filepath = paste(PATH_DATA, filename, sep = "/")
