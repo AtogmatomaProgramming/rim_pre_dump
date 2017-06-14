@@ -410,6 +410,18 @@ check_categories <- function(df){
   return (errors)
 }
 
+# ---- function to check if any length has the EJEM_MEDIDOS as NA
+#' function to check if any length has the EJEM_MEDIDOS as NA.
+#' @param df: dataframe to check
+#' @return dataframe with errors
+
+check_measured_individuals_na <- function(df){
+  errors <- df %>%
+    filter(is.na(EJEM_MEDIDOS))
+  
+  return (errors)
+}
+
 # ---- function to check if one category has two or more different P_MUE_DES ---
 #
 #' function to check if one category has two or more different P_MUE_DES.
@@ -542,7 +554,7 @@ check_falsos_mt1 <- check_false_mt1(records)
 check_barcos_extranjeros <- check_foreing_ship(records)
 # The function remove_MT1_trips_foreing_vessels(df) remove all the MT1 trips
 # with foreing vessels.
-# There is one MT1A trip with foreing vessel:
+# There is two MT1A trip with foreing vessel:
   records <- remove_MT1_trips_foreing_vessels(records)
 
 
@@ -553,13 +565,17 @@ check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 
 check_categorias <- check_categories(records)
-  # check_categorias <- humanize(check_categorias)
+  check_categorias <- humanize(check_categorias)
+  # all the categories are correct
 
+check_ejemplares_medidos_na <- check_measured_individuals_na(records)
+  # if any EJEM_MEDIDOS is NA, must be change to 0.
+  # TODO: make a funtcion to fix it automaticaly
 
 # Sometimes, one category with various species of the category has various landing weights.
-# This is nos possible to save in this way in SIRENO, so with one_category_with_different_landing_weights(df)
+# This is not possible to save that in SIRENO, so with one_category_with_different_landing_weights(df)
 # this species are detected. This errors are separated by influece area and
-# must be send to the sups
+# must be send to the sups to correct it after de save in SIRENO
 check_one_category_with_different_landing_weights <- one_category_with_different_landing_weights(records)
 # Create files to send to sups:
  check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
@@ -572,13 +588,14 @@ check_one_category_with_different_landing_weights <- one_category_with_different
 # or empty. The function fix_medida_variable(df) fix it:
 records <- fix_medida_variable(records)
 
-# By default, the IPD file hasn't the coutry variable filled. With
+# By default, the IPD file hasn't the coutry variable filled. The
 # create_variable_code_country(df) funcion fix it:
 records <- create_variable_code_country(records)
 
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
 export_to_excel(records)
+
 
 
 
