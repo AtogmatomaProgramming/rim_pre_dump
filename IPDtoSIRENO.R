@@ -39,11 +39,11 @@ ERRORS <- list() #list with all errors found in dataframes
 
 setwd("F:/misdoc/sap/IPDtoSIRENO/")
 
-PATH_DATA<- paste0(getwd(), "/data/2017/2017-03")
+PATH_DATA<- paste0(getwd(), "/data/2017/2017-04")
 
-FILENAME <- "muestreos_3_2017_ICES.txt"
+FILENAME <- "muestreos_4_ICES.txt"
 
-MONTH <- 3
+MONTH <- 4
 
 YEAR <- "2017"
 
@@ -290,8 +290,9 @@ remove_MT1_trips_foreing_vessels <- function(df){
 # df: dataframe to check
 # return a dataframe with the samples of incorrect month
 check_month <- function(df){
-  df$months <- sapply (df["FECHA"], function(x){format(x, "%m")})
+  df$months <- sapply (as.Date(df[["FECHA"]], "%d/%m/%Y"), function(x){format(x, "%m")})
   erroneus_months <- as.data.frame(unique(df$months))
+  colnames(erroneus_months) <- c("FECHA")
   erroneus_months <- erroneus_months %>%
     filter(FECHA != MONTH_STRING)
   erroneus_samples <- merge(x = df, y = erroneus_months, by.x = "months", by.y = "FECHA", all.y = TRUE)
@@ -517,8 +518,6 @@ check_puerto <- check_variable_with_master("COD_PUERTO", records)
 
 
 check_arte <- check_variable_with_master("COD_ARTE", records)
-  # There is one mistake:
-records <- correct_levels_in_variable(records, "COD_ARTE", "208", "201")
 
 
 check_origen <- check_variable_with_master("COD_ORIGEN", records)
