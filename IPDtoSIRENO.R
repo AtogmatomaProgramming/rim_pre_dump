@@ -510,6 +510,22 @@ fix_medida_variable <- function (df) {
   
 }
 
+# ---- function to Change the 000000 COD_BARCO from VORACERA_GC ----------------
+#' Change the 000000 COD_BARCO ('DESCONOCIDO' ship) from VORACERA_GC with 205509
+#' ('DESCONOCIDO VORAZ LONJA')
+#' 
+#' @param df: dataframe to modify
+#' @return Return a dataframe fixed
+#' 
+recode000000Ship <- function(df){
+  
+  df[["COD_BARCO"]] <- as.character(df[["COD_BARCO"]])
+  df[df["COD_BARCO"]=="000000" & df["ESTRATO_RIM"]=="VORACERA_GC",]["COD_BARCO"] <- "205509"
+  df[["COD_BARCO"]] <- as.factor(df[["COD_BARCO"]])
+  
+  return(df)
+  
+}
 
 # #### IMPORT FILE #############################################################
 records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_DATA)
@@ -591,6 +607,10 @@ records <- fix_medida_variable(records)
 # By default, the IPD file hasn't the coutry variable filled. The
 # create_variable_code_country(df) funcion fix it:
 records <- create_variable_code_country(records)
+
+# Change the 000000 COD_BARCO ('DESCONOCIDO' ship) from VORACERA_GC with 205509
+# ('DESCONOCIDO VORAZ LONJA')
+records <- recode000000Ship(records)
 
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
