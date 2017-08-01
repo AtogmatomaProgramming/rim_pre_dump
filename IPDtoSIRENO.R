@@ -39,11 +39,11 @@ ERRORS <- list() #list with all errors found in dataframes
 
 setwd("F:/misdoc/sap/IPDtoSIRENO/")
 
-PATH_DATA<- paste0(getwd(), "/data/2017/2017-04")
+PATH_DATA<- paste0(getwd(), "/data/2017/2017-05")
 
-FILENAME <- "muestreos_4_ICES.txt"
+FILENAME <- "muestreos_5_ICES.txt"
 
-MONTH <- 4
+MONTH <- 5
 
 YEAR <- "2017"
 
@@ -313,9 +313,9 @@ check_type_sample <- function(df){
 # df: dataframe where find duplicate samples
 # returns a dataframe with duplicate samples
 check_duplicates_type_sample <- function(df){
-  mt1 <- df[df["COD_TIPO_MUE"]=="MT1A",c("COD_PUERTO","FECHA","COD_BARCO","ESTRATO_RIM")]
+  mt1 <- df[df["COD_TIPO_MUE"]=="MT1A",c("COD_PUERTO","FECHA","COD_BARCO")]
   mt1 <- unique(mt1)
-  mt2 <- df[df["COD_TIPO_MUE"]=="MT2A",c("COD_PUERTO","FECHA","COD_BARCO","ESTRATO_RIM")]
+  mt2 <- df[df["COD_TIPO_MUE"]=="MT2A",c("COD_PUERTO","FECHA","COD_BARCO")]
   mt2 <- unique(mt2)
 
   duplicated <- merge(x = mt1, y = mt2)
@@ -570,8 +570,8 @@ check_falsos_mt1 <- check_false_mt1(records)
 check_barcos_extranjeros <- check_foreing_ship(records)
 # The function remove_MT1_trips_foreing_vessels(df) remove all the MT1 trips
 # with foreing vessels.
-# There is two MT1A trip with foreing vessel:
-  records <- remove_MT1_trips_foreing_vessels(records)
+# There aren't MT1A trip with foreing vessel:
+#  records <- remove_MT1_trips_foreing_vessels(records)
 
 
 check_especies_mezcla_no_mezcla <- check_mixed_as_no_mixed(records)
@@ -604,9 +604,11 @@ check_one_category_with_different_landing_weights <- one_category_with_different
 # or empty. The function fix_medida_variable(df) fix it:
 records <- fix_medida_variable(records)
 
-# By default, the IPD file hasn't the coutry variable filled. The
+# By default, the IPD file hasn't the country variable filled. The
 # create_variable_code_country(df) funcion fix it:
 records <- create_variable_code_country(records)
+  #check if there are any register without COD_PAIS --> maybe the vessel is not in the master
+  records[is.na(records$COD_PAIS),]
 
 # Change the 000000 COD_BARCO ('DESCONOCIDO' ship) from VORACERA_GC with 205509
 # ('DESCONOCIDO VORAZ LONJA')
@@ -615,9 +617,4 @@ records <- recode000000Ship(records)
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
 export_to_excel(records)
-
-
-
-
-
 
