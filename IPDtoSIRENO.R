@@ -39,11 +39,11 @@ ERRORS <- list() #list with all errors found in dataframes
 
 setwd("F:/misdoc/sap/IPDtoSIRENO/")
 
-PATH_DATA<- paste0(getwd(), "/data/2017/2017-05")
+PATH_DATA<- paste0(getwd(), "/data/2017/2017-07")
 
-FILENAME <- "muestreos_5_ICES.txt"
+FILENAME <- "muestreos_7_ICES.txt"
 
-MONTH <- 5
+MONTH <- 7
 
 YEAR <- "2017"
 
@@ -570,8 +570,8 @@ check_falsos_mt1 <- check_false_mt1(records)
 check_barcos_extranjeros <- check_foreing_ship(records)
 # The function remove_MT1_trips_foreing_vessels(df) remove all the MT1 trips
 # with foreing vessels.
-# There aren't MT1A trip with foreing vessel:
-#  records <- remove_MT1_trips_foreing_vessels(records)
+# There aren one MT1A trip with foreing vessel:
+  records <- remove_MT1_trips_foreing_vessels(records)
 
 
 check_especies_mezcla_no_mezcla <- check_mixed_as_no_mixed(records)
@@ -591,7 +591,7 @@ check_ejemplares_medidos_na <- check_measured_individuals_na(records)
 # Sometimes, one category with various species of the category has various landing weights.
 # This is not possible to save that in SIRENO, so with one_category_with_different_landing_weights(df)
 # this species are detected. This errors are separated by influece area and
-# must be send to the sups to correct it after de save in SIRENO
+# must be send to the sups to correct it after save it in SIRENO
 check_one_category_with_different_landing_weights <- one_category_with_different_landing_weights(records)
 # Create files to send to sups:
  check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
@@ -608,7 +608,10 @@ records <- fix_medida_variable(records)
 # create_variable_code_country(df) funcion fix it:
 records <- create_variable_code_country(records)
   #check if there are any register without COD_PAIS --> maybe the vessel is not in the master
-  records[is.na(records$COD_PAIS),]
+  unique(records[is.na(records$COD_PAIS),c("COD_BARCO")])
+  #in this case there are two vessels which aren't in the fleet dataset 208086 and 207978. This vessels are
+  #in SIRENO with 724 code country, so change it:
+  records[is.na(records$COD_PAIS),c("COD_PAIS")] <- 724
 
 # Change the 000000 COD_BARCO ('DESCONOCIDO' ship) from VORACERA_GC with 205509
 # ('DESCONOCIDO VORAZ LONJA')
