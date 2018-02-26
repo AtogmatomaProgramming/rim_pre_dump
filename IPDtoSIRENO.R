@@ -39,11 +39,11 @@ ERRORS <- list() #list with all errors found in dataframes
 
 setwd("F:/misdoc/sap/IPDtoSIRENO/")
 
-PATH_DATA<- paste0(getwd(), "/data/2017/2017-07")
+PATH_DATA<- paste0(getwd(), "/data/2017/2017-12")
 
-FILENAME <- "muestreos_7_ICES.txt"
+FILENAME <- "muestreos_12_ICES.txt"
 
-MONTH <- 7
+MONTH <- 12
 
 YEAR <- "2017"
 
@@ -530,6 +530,15 @@ recode000000Ship <- function(df){
 # #### IMPORT FILE #############################################################
 records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_DATA)
 
+
+# #### EXPORT FILE TO CSV ######################################################
+
+file_name <- unlist(strsplit(FILENAME, '.', fixed = T))
+file_name <- paste0(PATH_DATA, "/",  file_name[1], '_imported.csv')
+
+exportCsvSAPMUEBASE(records, file_name)
+
+
 # #### START CHECK #############################################################
 # if any error is detected use function:
 # correct_levels_in_variable(df, variable, erroneus_data, correct_data, conditional_variables, conditions)
@@ -570,7 +579,6 @@ check_falsos_mt1 <- check_false_mt1(records)
 check_barcos_extranjeros <- check_foreing_ship(records)
 # The function remove_MT1_trips_foreing_vessels(df) remove all the MT1 trips
 # with foreing vessels.
-# There aren one MT1A trip with foreing vessel:
   records <- remove_MT1_trips_foreing_vessels(records)
 
 
@@ -609,8 +617,8 @@ records <- fix_medida_variable(records)
 records <- create_variable_code_country(records)
   #check if there are any register without COD_PAIS --> maybe the vessel is not in the master
   unique(records[is.na(records$COD_PAIS),c("COD_BARCO")])
-  #in this case there are two vessels which aren't in the fleet dataset 208086 and 207978. This vessels are
-  #in SIRENO with 724 code country, so change it:
+  #in this case there are four vessels which aren't in the fleet dataset.
+  #This vessels are saved in SIRENO with 724 code country, so change it:
   records[is.na(records$COD_PAIS),c("COD_PAIS")] <- 724
 
 # Change the 000000 COD_BARCO ('DESCONOCIDO' ship) from VORACERA_GC with 205509
