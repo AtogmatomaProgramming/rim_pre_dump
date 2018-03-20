@@ -20,8 +20,10 @@ library(tools) #file_ext()
 library(devtools) # Need this package to use install and install_github
 
 # ---- install sapmuebase from local
+#remove.packages("sapmuebase")
 #install("F:/misdoc/sap/sapmuebase")
 # ---- install sapmuebase from github
+#remove.packages("sapmuebase")
 #install_github("Eucrow/sapmuebase")
 
 library(sapmuebase) # and load the library
@@ -39,13 +41,13 @@ ERRORS <- list() #list with all errors found in dataframes
 
 setwd("F:/misdoc/sap/IPDtoSIRENO/")
 
-PATH_DATA<- paste0(getwd(), "/data/2017/2017-12")
+PATH_DATA<- paste0(getwd(), "/data/2018/2018-01")
 
-FILENAME <- "muestreos_12_ICES.txt"
+FILENAME <- "muestreos_1_ICES.txt"
 
-MONTH <- 12
+MONTH <- 1
 
-YEAR <- "2017"
+YEAR <- "2018"
 
 #                                                                              #
 ################################################################################
@@ -365,7 +367,12 @@ check_foreing_ship <- function(df){
     group_by(FECHA, COD_TIPO_MUE, COD_BARCO, COD_PUERTO, COD_ARTE, COD_ORIGEN, ESTRATO_RIM) %>%
     count(FECHA, COD_TIPO_MUE, COD_BARCO, COD_PUERTO, COD_ARTE, COD_ORIGEN, ESTRATO_RIM)
 
+  if(ships$COD_TIPO_MUE != 1) {
+    warning("there are some MT2A with foreings ship!!!")
+  }
+  
   return(ships[, c("FECHA", "COD_TIPO_MUE", "COD_BARCO", "COD_PUERTO", "COD_ARTE", "COD_ORIGEN", "ESTRATO_RIM")])
+  
 }
 
 # TODO: function to search ships not active
@@ -528,13 +535,13 @@ recode000000Ship <- function(df){
 }
 
 # #### IMPORT FILE #############################################################
-records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_DATA)
+records <- sapmuebase::importIPDFile(FILENAME, by_month = MONTH, path = PATH_DATA)
 
 
 # #### EXPORT FILE TO CSV ######################################################
 
 file_name <- unlist(strsplit(FILENAME, '.', fixed = T))
-file_name <- paste0(PATH_DATA, "/",  file_name[1], '_imported.csv')
+file_name <- paste0(PATH_DATA, "/",  file_name[1], '_raw_imported.csv')
 
 exportCsvSAPMUEBASE(records, file_name)
 
@@ -615,17 +622,23 @@ records <- fix_medida_variable(records)
 # By default, the IPD file hasn't the country variable filled. The
 # create_variable_code_country(df) funcion fix it:
 records <- create_variable_code_country(records)
+
   #check if there are any register without COD_PAIS --> maybe the vessel is not in the master
   unique(records[is.na(records$COD_PAIS),c("COD_BARCO")])
   #in this case there are four vessels which aren't in the fleet dataset.
   #This vessels are saved in SIRENO with 724 code country, so change it:
   records[is.na(records$COD_PAIS),c("COD_PAIS")] <- 724
 
+  
+# At this time, the field COD_MUESTREADOR is incorrectly filled, so the
+# information it contained must be deleted:
+records$COD_MUESTREADOR <- ""
+  
 # Change the 000000 COD_BARCO ('DESCONOCIDO' ship) from VORACERA_GC with 205509
 # ('DESCONOCIDO VORAZ LONJA')
 records <- recode000000Ship(records)
 
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
-export_to_excel(records)
+# export_to_excel(records)
 
