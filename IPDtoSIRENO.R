@@ -493,6 +493,9 @@ create_variable_code_country <- function(df){
   #we need to reorder:
   with_country <- with_country[,c(2,3,1,4:length(with_country))]
   names(with_country)[names(with_country) == "PAICOD"] <- "COD_PAIS"
+  
+  export_log_file("Add", "COD_PAIS")
+  
   return (with_country)
 }
 
@@ -510,9 +513,11 @@ fix_medida_variable <- function (df) {
 
   if ("MEDIDA" %in% colnames(df)){
     df[["MEDIDA"]] <- "T"
-    return(df)
     
     export_log_file("change", "MEDIDA", "all rows", "T")
+    
+    return(df)
+    
     
   } else {
     stop(paste0("TALL.PESO doesn't exists in ", substitute(df)))
@@ -651,6 +656,7 @@ records <- create_variable_code_country(records)
   #in this case there are various vessels which aren't in the fleet dataset.
   #This vessels are saved in SIRENO with 724 code country, so change it:
   records[is.na(records$COD_PAIS),c("COD_PAIS")] <- 724
+  export_log_file("Change", "COD_PAIS", "NA", "724")
 
   
 # At this time, the field COD_MUESTREADOR is incorrectly filled, so the
