@@ -41,11 +41,11 @@ ERRORS <- list() #list with all errors found in dataframes
 
 setwd("F:/misdoc/sap/IPDtoSIRENO/")
 
-PATH_DATA<- paste0(getwd(), "/data/2018/2018-01")
+PATH_DATA<- paste0(getwd(), "/data/2018/2018-02")
 
-FILENAME <- "muestreos_1_ICES.txt"
+FILENAME <- "muestreos_2_ICES.txt"
 
-MONTH <- 1
+MONTH <- 2
 
 YEAR <- "2018"
 
@@ -511,6 +511,9 @@ fix_medida_variable <- function (df) {
   if ("MEDIDA" %in% colnames(df)){
     df[["MEDIDA"]] <- "T"
     return(df)
+    
+    export_log_file("change", "MEDIDA", "all rows", "T")
+    
   } else {
     stop(paste0("TALL.PESO doesn't exists in ", substitute(df)))
   }
@@ -526,9 +529,16 @@ fix_medida_variable <- function (df) {
 #' 
 recode000000Ship <- function(df){
   
-  df[["COD_BARCO"]] <- as.character(df[["COD_BARCO"]])
-  df[df["COD_BARCO"]=="000000" & df["ESTRATO_RIM"]=="VORACERA_GC",]["COD_BARCO"] <- "205509"
-  df[["COD_BARCO"]] <- as.factor(df[["COD_BARCO"]])
+  if (nrow(df[df["COD_BARCO"]=="000000" & df["ESTRATO_RIM"]=="VORACERA_GC",])!=0){
+    df[["COD_BARCO"]] <- as.character(df[["COD_BARCO"]])
+    df[df["COD_BARCO"]=="000000" & df["ESTRATO_RIM"]=="VORACERA_GC",]["COD_BARCO"] <- "205509"
+    df[["COD_BARCO"]] <- as.factor(df[["COD_BARCO"]])
+    
+    export_log_file("Change", "COD_BARCO", "000000", "205509", "ESTRATO_RIM", "VORACERA_GC")
+    
+  } else {
+    warning("There aren't ships to recode")
+  }
   
   return(df)
   
@@ -562,8 +572,17 @@ check_puerto <- check_variable_with_master("COD_PUERTO", records)
 
 
 check_arte <- check_variable_with_master("COD_ARTE", records)
+  # There are a trip with COD_ARTE=208, which is 'Miño'. 'Miño' must be saved
+  # in SIRENO as BETA=201, so
+  records <- correct_levels_in_variable(records,
+                                        "COD_ARTE",
+                                        "208",
+                                        "201",
+                                        c("COD_PUERTO", "FECHA", "COD_BARCO"),
+                                        c("0914", "26/02/2018", "208184"))
 
 
+  
 check_origen <- check_variable_with_master("COD_ORIGEN", records)
 
 
@@ -587,6 +606,10 @@ check_barcos_extranjeros <- check_foreing_ship(records)
 # The function remove_MT1_trips_foreing_vessels(df) remove all the MT1 trips
 # with foreing vessels.
   records <- remove_MT1_trips_foreing_vessels(records)
+  # There are one MT2A trip with foreing vessel:
+  records %>%
+    #ATENTION to the ! and ():
+    filter( as.integer(as.character(COD_BARCO)) >= 800000 & COD_TIPO_MUE == "MT2A")
 
 
 check_especies_mezcla_no_mezcla <- check_mixed_as_no_mixed(records)
@@ -609,10 +632,10 @@ check_ejemplares_medidos_na <- check_measured_individuals_na(records)
 # must be send to the sups to correct it after save it in SIRENO
 check_one_category_with_different_landing_weights <- one_category_with_different_landing_weights(records)
 # Create files to send to sups:
- check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
-   errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weights, "COD_PUERTO")
-   suf <- paste("_", YEAR, MONTH, "_errors_categorias_con_varios_pesos_desembarcados", sep="_")
-   exportListToCsv(errors_category, suffix = suf, path = PATH_DATA)
+ # check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
+ #   errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weights, "COD_PUERTO")
+ #   suf <- paste("_", YEAR, MONTH, "_errors_categorias_con_varios_pesos_desembarcados", sep="_")
+ #   exportListToCsv(errors_category, suffix = suf, path = PATH_DATA)
   
 
 # All the data saved by IPD are lenthts samples so the MEDIDA variable can't be "P" ("Pesos", weights)
@@ -625,7 +648,7 @@ records <- create_variable_code_country(records)
 
   #check if there are any register without COD_PAIS --> maybe the vessel is not in the master
   unique(records[is.na(records$COD_PAIS),c("COD_BARCO")])
-  #in this case there are four vessels which aren't in the fleet dataset.
+  #in this case there are various vessels which aren't in the fleet dataset.
   #This vessels are saved in SIRENO with 724 code country, so change it:
   records[is.na(records$COD_PAIS),c("COD_PAIS")] <- 724
 
@@ -640,5 +663,5 @@ records <- recode000000Ship(records)
 
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
-# export_to_excel(records)
+export_to_excel(records)
 
