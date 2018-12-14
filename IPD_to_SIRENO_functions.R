@@ -240,10 +240,26 @@ check_month <- function(df){
 
 # function to check the type of sample.
 # df: dataframe to check
-# return samples with TIPO_MUE != to "CONCURRENTE EN LONJA"
+# return samples with:
+# - TIPO_MUE != to "CONCURRENTE EN LONJA"
+# - except VORACERA_GC which must be "EN BASE A ESPECIE"
 check_type_sample <- function(df){
-  errors <- df[df[["TIPO_MUE"]]!="CONCURRENTE EN LONJA",]
+
+  errors_not_voracera <- records[ which(records[["ESTRATO_RIM"]] != "VORACERA_GC"
+                & records[["TIPO_MUE"]] != "CONCURRENTE EN LONJA"), ]
+  
+  errors_voracera <- records[ which(records[["ESTRATO_RIM"]] == "VORACERA_GC"
+                              & records[["TIPO_MUE"]] != "EN BASE A ESPECIE"), ]
+  
+  errors <- rbind(errors_not_voracera, errors_voracera)
+  
+  errors <- errors[,c("FECHA", "COD_PUERTO", "COD_BARCO", "ESTRATO_RIM",
+                      "COD_TIPO_MUE", "TIPO_MUE")]
+  errors["error"] <- "Todos los muestreos tienen que ser CONCURRENTE EN LONJA,
+                    excepto VORACERA_GC que ha de ser EN BASE A ESPECIE"
+  
   return(errors)
+  
 }
 
 

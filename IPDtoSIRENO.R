@@ -119,8 +119,7 @@ check_origen <- check_variable_with_master("COD_ORIGEN", records)
 check_procedencia <- check_variable_with_master("PROCEDENCIA", records)
 
 
-# TODO: add check_type_sample to check_variable_with_master
-check_nombre_tipo_muestreo <- check_type_sample(records)
+check_tipo_muestreo <- check_type_sample(records)
 
 
 check_duplicados_tipo_muestreo <- check_duplicates_type_sample(records)
