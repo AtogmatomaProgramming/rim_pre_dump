@@ -44,11 +44,11 @@ ERRORS <- list() #list with all errors found in dataframes
 
 setwd("F:/misdoc/sap/IPDtoSIRENO/")
 
-PATH_DATA<- paste0(getwd(), "/data/2018/2018-03")
+PATH_DATA<- paste0(getwd(), "/data/2018/2018-10")
 
-FILENAME <- "muestreos_especie_3_ICES.txt"
+FILENAME <- "muestreos_10_ICES.txt"
 
-MONTH <- 3
+MONTH <- 10
 
 YEAR <- "2018"
 
@@ -146,7 +146,7 @@ check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
 
 check_categorias <- check_categories(records)
 check_categorias <- humanize(check_categorias)
-# all the categories are correct
+# all this categories are correct
 
 check_ejemplares_medidos_na <- check_measured_individuals_na(records)
 # if any EJEM_MEDIDOS is NA, must be change to 0.
@@ -157,6 +157,7 @@ check_ejemplares_medidos_na <- check_measured_individuals_na(records)
 # function this mistakes are detected. This errors are separated by influece area and
 # must be send to the sups to fix it after save it in SIRENO
 check_one_category_with_different_landing_weights <- one_category_with_different_landing_weights(records)
+
 # Create files to send to sups:
 check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
   errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weights, "COD_PUERTO")
@@ -172,12 +173,11 @@ records <- fix_medida_variable(records)
 # create_variable_code_country(df) funcion fix it:
 records <- create_variable_code_country(records)
 
-#check if there are any register without COD_PAIS --> the vessel is not in the master
+#check if there are any vessel register without COD_PAIS
 unique(records[is.na(records$COD_PAIS),c("COD_BARCO")])
-# in this case there are various vessels which aren't in the fleet dataset.
 # First, I check in SIRENO if this vessels are in the fleet master. In this case,
 # all of them are.
-# And then, this vessels will be saved in SIRENO with 724 code country, so change it:
+# So this vessels must be saved in SIRENO with 724 code country, so change it:
 records[is.na(records$COD_PAIS),c("COD_PAIS")] <- 724
 export_log_file("Change", "COD_PAIS", "NA", "724")
 
@@ -185,7 +185,7 @@ export_log_file("Change", "COD_PAIS", "NA", "724")
 # Change the 000000 COD_BARCO ('DESCONOCIDO' ship) from VORACERA_GC with 205509
 # ('DESCONOCIDO VORAZ LONJA')
 records <- recode000000Ship(records)
-# In this month, there aren't samples of VORACERA_GC
+
 
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe

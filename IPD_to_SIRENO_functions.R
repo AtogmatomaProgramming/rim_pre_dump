@@ -49,7 +49,11 @@ export_log_file <- function(action, variable, erroneus_data="", correct_data="",
   #obtain the operation code
   operation_code <- read_operation_code() + 1
   
-  to_append <- paste(action, variable, erroneus_data, correct_data, conditional_variable, condition, operation_code, date, sep = ",")
+  # concat the conditional_variable and condition
+  conditional_variable_concat = paste(conditional_variable, collapse = '-')
+  condition_concat = paste(condition, collapse = '-')
+  
+  to_append <- paste(action, variable, erroneus_data, correct_data, conditional_variable_concat, condition_concat, operation_code, date, sep = ",")
   
   #check if the file exists. If not, create it.
   if (!file.exists(PATH_LOG_FILE)){
