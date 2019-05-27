@@ -253,12 +253,21 @@ check_type_sample <- function(df){
   
   errors <- rbind(errors_not_voracera, errors_voracera)
   
-  errors <- errors[,c("FECHA", "COD_PUERTO", "COD_BARCO", "ESTRATO_RIM",
-                      "COD_TIPO_MUE", "TIPO_MUE")]
-  errors["error"] <- "Todos los muestreos tienen que ser CONCURRENTE EN LONJA,
-                    excepto VORACERA_GC que ha de ser EN BASE A ESPECIE"
+  if (nrow(errors)>0) {
+    
+    errors <- errors[,c("FECHA", "COD_PUERTO", "COD_BARCO", "ESTRATO_RIM",
+                        "COD_TIPO_MUE", "TIPO_MUE")]
+    errors["error"] <- "Todos los muestreos tienen que ser CONCURRENTE EN LONJA,
+                      excepto VORACERA_GC que ha de ser EN BASE A ESPECIE"
+    
+    return(errors)
   
-  return(errors)
+  } else {
+    
+    return(errors)
+    
+  }
+  
   
 }
 

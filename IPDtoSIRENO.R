@@ -44,13 +44,13 @@ ERRORS <- list() #list with all errors found in dataframes
 
 setwd("F:/misdoc/sap/IPDtoSIRENO/")
 
-PATH_DATA<- paste0(getwd(), "/data/2018/2018-10")
+PATH_DATA<- paste0(getwd(), "/data/2019/2019_02")
 
-FILENAME <- "muestreos_10_ICES.txt"
+FILENAME <- "muestreos_2_ICES.txt"
 
-MONTH <- 10
+MONTH <- 2
 
-YEAR <- "2018"
+YEAR <- "2019"
 
 #                                                                              #
 ################################################################################
@@ -92,7 +92,6 @@ file_name <- paste0(PATH_DATA, "/",  file_name[1], '_raw_imported.csv')
 
 exportCsvSAPMUEBASE(records, file_name)
 
-
 # ··············································································
 # #### START CHECK -------------------------------------------------------------
 # ··············································································
@@ -120,6 +119,8 @@ check_procedencia <- check_variable_with_master("PROCEDENCIA", records)
 
 
 check_tipo_muestreo <- check_type_sample(records)
+# TO DO: when correct_levels_in_variable doesn'f find any erroenus data, return
+# an error. Fix it.
 
 
 check_duplicados_tipo_muestreo <- check_duplicates_type_sample(records)
@@ -136,12 +137,9 @@ check_barcos_extranjeros <- check_foreing_ship(records)
 # with foreing vessels.
 # records <- remove_MT1_trips_foreing_vessels(records)
 
-
 check_especies_mezcla_no_mezcla <- check_mixed_as_no_mixed(records)
 
-
 check_especies_no_mezcla_mezcla <- check_no_mixed_as_mixed(records)
-
 
 check_categorias <- check_categories(records)
 check_categorias <- humanize(check_categorias)
