@@ -1,6 +1,8 @@
 # Pre-dump revision of data saved in SIRENO
 
-The SAP project from the Spanish Institute of Oceanography (IEO) obtains, analyzes and prepare the necessary information to monitor the fishery activity in Northeast Atlantic. To achieve this, the biological on-shore samples are collected by a subcontracted company, which send the data to SAP project to save it in IEO's database (SIRENO).
+The SAP project from the Spanish Institute of Oceanography (IEO) obtains, analyzes and prepare the necessary information to monitor the fishery activity in Northeast Atlantic. 
+
+The biological on-shore samples are collected by a subcontracted company under the supervision of the SAP project. Before saving the data into the national database an specific revision of the data is done by SAP project.
 
 The EM-SAP (Sampling Team of SAP project) assumes the responsibility of the correct dumping into IEO’s database (SIRENO) of the sampling information a way that ensures the information saved complies with the criteria, format and protocol agreed in the team.
 
