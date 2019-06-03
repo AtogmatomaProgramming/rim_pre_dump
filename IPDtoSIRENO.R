@@ -44,11 +44,11 @@ ERRORS <- list() #list with all errors found in dataframes
 
 setwd("F:/misdoc/sap/IPDtoSIRENO/")
 
-PATH_DATA<- paste0(getwd(), "/data/2019/2019_02")
+PATH_DATA<- paste0(getwd(), "/data/2019/2019_04")
 
-FILENAME <- "muestreos_2_ICES.txt"
+FILENAME <- "muestreos_4_ICES.txt"
 
-MONTH <- 2
+MONTH <- 4
 
 YEAR <- "2019"
 
@@ -130,7 +130,6 @@ check_falsos_mt2 <- check_false_mt2(records)
 
 
 check_falsos_mt1 <- check_false_mt1(records)
-
 
 check_barcos_extranjeros <- check_foreing_ship(records)
 # The function remove_MT1_trips_foreing_vessels(df) remove all the MT1 trips

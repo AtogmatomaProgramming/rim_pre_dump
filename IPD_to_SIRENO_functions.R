@@ -323,18 +323,31 @@ check_false_mt1 <- function(df){
 check_foreing_ship <- function(df){
   dataframe <- df
   dataframe$COD_BARCO <- as.character(dataframe$COD_BARCO)
-  ships <- dataframe %>%
-    filter(grepl("^8\\d{5}",COD_BARCO)) %>%
-    group_by(FECHA, COD_TIPO_MUE, COD_BARCO, COD_PUERTO, COD_ARTE, COD_ORIGEN, ESTRATO_RIM) %>%
-    count(FECHA, COD_TIPO_MUE, COD_BARCO, COD_PUERTO, COD_ARTE, COD_ORIGEN, ESTRATO_RIM)
+  # ships <- dataframe %>%
+  #   filter(grepl("^8\\d{5}",COD_BARCO)) %>%
+  #   group_by(FECHA, COD_TIPO_MUE, COD_BARCO, COD_PUERTO, COD_ARTE, COD_ORIGEN, ESTRATO_RIM) %>%
+  #   count(FECHA, COD_TIPO_MUE, COD_BARCO, COD_PUERTO, COD_ARTE, COD_ORIGEN, ESTRATO_RIM)
   
-  if(nrow(ships) == 0) {
-    print("There aren't foreing ships.")
-  } else if(ships$COD_TIPO_MUE != 1) {
-    warning("there are some MT2A with foreings ship!!!")
+  ships <- dataframe[grepl("^8\\d{5}", dataframe$COD_BARCO), ]
+  
+  if(nrow(ships) != 0){
+    
+    ships <- ships %>%
+      group_by(FECHA, COD_TIPO_MUE, COD_BARCO, COD_PUERTO, COD_ARTE, COD_ORIGEN, ESTRATO_RIM) %>%
+      count(FECHA, COD_TIPO_MUE, COD_BARCO, COD_PUERTO, COD_ARTE, COD_ORIGEN, ESTRATO_RIM)
+
+    return(ships)
+
   }
   
-  return(ships[, c("FECHA", "COD_TIPO_MUE", "COD_BARCO", "COD_PUERTO", "COD_ARTE", "COD_ORIGEN", "ESTRATO_RIM")])
+  
+  # if(nrow(ships) == 0) {
+  #   print("There aren't foreing ships.")
+  # } else if(ships$COD_TIPO_MUE != 1) {
+  #   warning("there are some MT2A with foreings ship!!!")
+  # }
+  # 
+  # return(ships[, c("FECHA", "COD_TIPO_MUE", "COD_BARCO", "COD_PUERTO", "COD_ARTE", "COD_ORIGEN", "ESTRATO_RIM")])
   
 }
 
