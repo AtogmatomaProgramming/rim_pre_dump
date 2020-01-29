@@ -21,6 +21,7 @@ library(devtools) # Need this package to use install and install_github
 
 # ---- install sapmuebase from local
 #remove.packages("sapmuebase")
+#.rs.restartR()
 #install("F:/misdoc/sap/sapmuebase")
 # ---- install sapmuebase from github
 #remove.packages("sapmuebase")
@@ -42,13 +43,11 @@ ERRORS <- list() #list with all errors found in dataframes
 ################################################################################
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES:                                      #
 
-setwd("F:/misdoc/sap/IPDtoSIRENO/")
+PATH_FILES <- file.path(getwd(), "data/2019/2019_12")
 
-PATH_DATA<- paste0(getwd(), "/data/2019/2019_04")
+FILENAME <- "muestreos_12_ICES.txt"
 
-FILENAME <- "muestreos_4_ICES.txt"
-
-MONTH <- 4
+MONTH <- 12
 
 YEAR <- "2019"
 
@@ -58,9 +57,9 @@ YEAR <- "2019"
 PATH_FILE <- getwd()
 MONTH_STRING <- sprintf("%02d", MONTH)
 LOG_FILE <- paste("LOG_", YEAR, "_", MONTH_STRING, ".csv", sep="")
-PATH_LOG_FILE <- file.path(paste(PATH_DATA, LOG_FILE, sep = "/"))
-PATH_BACKUP_FILE <- file.path(paste(PATH_DATA, "backup", sep = "/"))
-PATH_ERRORS <- paste(PATH_DATA,"/errors",sep="")
+PATH_LOG_FILE <- file.path(paste(PATH_FILES, LOG_FILE, sep = "/"))
+PATH_BACKUP_FILE <- file.path(paste(PATH_FILES, "backup", sep = "/"))
+PATH_ERRORS <- paste(PATH_FILES,"/errors",sep="")
 
 
 # ··············································································
@@ -75,22 +74,22 @@ BASE_FIELDS <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_TIPO_MU
 # ··············································································
 # All the functions required in this script are located in
 # revision_volcado_functions.R file.
-source('IPD_to_SIRENO_functions.R')
+source('rim_pre_dump_functions.R')
 
 
 # ··············································································
 # IMPORT FILE ------------------------------------------------------------------
 # ··············································································
-records <- sapmuebase::importIPDFile(FILENAME, by_month = MONTH, path = PATH_DATA)
+records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_FILES)
 
 
 # ··············································································
 # EXPORT FILE TO CSV -----------------------------------------------------------
 # ··············································································
 file_name <- unlist(strsplit(FILENAME, '.', fixed = T))
-file_name <- paste0(PATH_DATA, "/",  file_name[1], '_raw_imported.csv')
+file_name <- paste0(file_name[1], '_raw_imported.csv')
 
-exportCsvSAPMUEBASE(records, file_name)
+exportCsvSAPMUEBASE(records, file_name, path = PATH_FILES)
 
 # ··············································································
 # #### START CHECK -------------------------------------------------------------
@@ -110,6 +109,8 @@ check_puerto <- check_variable_with_master("COD_PUERTO", records)
 
 
 check_arte <- check_variable_with_master("COD_ARTE", records)
+#there are two "miño" 208 gears. I change it to "beta" 201
+records <- correct_levels_in_variable(records, "COD_ARTE", "208", "201")
 
 
 check_origen <- check_variable_with_master("COD_ORIGEN", records)
@@ -121,6 +122,7 @@ check_procedencia <- check_variable_with_master("PROCEDENCIA", records)
 check_tipo_muestreo <- check_type_sample(records)
 # TO DO: when correct_levels_in_variable doesn'f find any erroenus data, return
 # an error. Fix it.
+# records <- correct_levels_in_variable(records, "ESTRATEGIA", "CONCURRENTE EN LONJA", "EN BASE A ESPECIE", "ESTRATO_RIM", "VORACERA_GC")
 
 
 check_duplicados_tipo_muestreo <- check_duplicates_type_sample(records)
@@ -134,6 +136,7 @@ check_falsos_mt1 <- check_false_mt1(records)
 check_barcos_extranjeros <- check_foreing_ship(records)
 # The function remove_MT1_trips_foreing_vessels(df) remove all the MT1 trips
 # with foreing vessels.
+# There are one foreing vessel, so:
 # records <- remove_MT1_trips_foreing_vessels(records)
 
 check_especies_mezcla_no_mezcla <- check_mixed_as_no_mixed(records)
@@ -147,6 +150,7 @@ check_categorias <- humanize(check_categorias)
 check_ejemplares_medidos_na <- check_measured_individuals_na(records)
 # if any EJEM_MEDIDOS is NA, must be change to 0.
 # TODO: make a funtcion to fix it automaticaly
+# records <- records[which(!is.na(records$EJEM_MEDIDOS)),]
 
 # Sometimes, one category with various species of the category has various landing weights.
 # This is not possible to save it in SIRENO, so with one_category_with_different_landing_weights(df)
@@ -157,8 +161,14 @@ check_one_category_with_different_landing_weights <- one_category_with_different
 # Create files to send to sups:
 check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
   errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weights, "COD_PUERTO")
+  #remove empty dataframes from list:
+  errors_category <- Filter(function(x){
+                              nrow(x) > 0
+                            }, errors_category)
+  
   suf <- paste("_", YEAR, MONTH, "_errors_categorias_con_varios_pesos_desembarcados", sep="_")
-  exportListToCsv(errors_category, suffix = suf, path = PATH_DATA)
+
+  exportListToCsv(errors_category, suffix = suf, path = PATH_FILES)
 
 
 # All the data saved by IPD are lenthts samples so the MEDIDA variable can't be "P" ("Pesos", weights)
@@ -186,4 +196,3 @@ records <- recode000000Ship(records)
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
 export_to_excel(records)
-

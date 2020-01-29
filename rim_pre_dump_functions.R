@@ -20,7 +20,7 @@ exportTrackingFile<- function(){
   operation_code <- read_operation_code()
   filename <- file_path_sans_ext(FILENAME)
   filename <- paste(filename, operation_code, sep="_")
-  filename <- paste(PATH_DATA, filename, sep="/")
+  filename <- paste(PATH_FILES, filename, sep="/")
   filename <- paste(filename,  ".csv", sep="")
   write.csv(records, filename, quote = FALSE, row.names = FALSE)
 }
@@ -246,17 +246,17 @@ check_month <- function(df){
 check_type_sample <- function(df){
 
   errors_not_voracera <- records[ which(records[["ESTRATO_RIM"]] != "VORACERA_GC"
-                & records[["TIPO_MUE"]] != "CONCURRENTE EN LONJA"), ]
+                & records[["ESTRATEGIA"]] != "CONCURRENTE EN LONJA"), ]
   
   errors_voracera <- records[ which(records[["ESTRATO_RIM"]] == "VORACERA_GC"
-                              & records[["TIPO_MUE"]] != "EN BASE A ESPECIE"), ]
+                              & records[["ESTRATEGIA"]] != "EN BASE A ESPECIE"), ]
   
   errors <- rbind(errors_not_voracera, errors_voracera)
   
   if (nrow(errors)>0) {
     
     errors <- errors[,c("FECHA", "COD_PUERTO", "COD_BARCO", "ESTRATO_RIM",
-                        "COD_TIPO_MUE", "TIPO_MUE")]
+                        "COD_TIPO_MUE", "ESTRATEGIA")]
     errors["error"] <- "Todos los muestreos tienen que ser CONCURRENTE EN LONJA,
                       excepto VORACERA_GC que ha de ser EN BASE A ESPECIE"
     
@@ -443,13 +443,13 @@ one_category_with_different_landing_weights <- function(df){
 export_to_excel <- function(df){
   month_in_spanish <- c("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
   
-  filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH_STRING)], "_", YEAR, ".xlsx", sep="")
-  filepath = paste(PATH_DATA, filename, sep = "/")
+  filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH_STRING)], "_", YEAR, "_ICES.xlsx", sep="")
+  filepath = paste(PATH_FILES, filename, sep = "/")
   
   colnames(df) <- c("FECHA","PUERTO","BUQUE","ARTE","ORIGEN","METIER","PROYECTO",
                     "TIPO MUESTREO","NRECHAZOS","NBARCOS MUESTREADOS","CUADRICULA",
                     "LAT DECIMAL","LON DECIMAL","DIAS_MAR","PESO_TOTAL","COD_ESP_TAX",
-                    "TIPO_MUESTREO","PROCEDENCIA","COD_CATEGORIA","PESO","COD_ESP_MUE",
+                    "ESTRATEGIA","PROCEDENCIA","COD_CATEGORIA","PESO","COD_ESP_MUE",
                     "SEXO","PESO MUESTRA","MEDIDA","TALLA","NEJEMPLARES","COD_PUERTO_DESCARGA",
                     "FECHA_DESEM", "OBSERVACIONES", "COD_MUESTREADOR", "COD_PAIS")
   
