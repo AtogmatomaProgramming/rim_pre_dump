@@ -74,7 +74,7 @@ export_log_file <- function(action, variable, erroneus_data="", correct_data="",
 #' @param variable: one of this variables: ESTRATO_RIM, COD_PUERTO, COD_ORIGEN,
 #' COD_ARTE or COD_PROCEDENCIA
 #' @return Return a dataframe with samples containing erroneus variables
-check_variable_with_master <- function (variable, df){
+checkVariableWithMaster <- function (variable, df){
   
   valid_variables = c("ESTRATO_RIM","COD_PUERTO","COD_ORIGEN","COD_ARTE","PROCEDENCIA")
   if (!(variable %in% valid_variables)) {
@@ -83,25 +83,31 @@ check_variable_with_master <- function (variable, df){
   
   # look if the variable begin with "COD_". In this case, the name of the data source
   # is the name of the variable without "COD_"
-  if (grepl("^COD_", variable)){
-    variable <- strsplit(variable, "COD_")
-    variable <- variable[[1]][2]
+  data_source_name <- variable
+  if (grepl("^COD_", data_source_name)){
+    data_source_name <- strsplit(data_source_name, "COD_")
+    data_source_name <- data_source_name[[1]][2]
   }
-  name_data_set <- tolower(variable)
+  data_source_name <- tolower(data_source_name)
   
-  errors <- anti_join(x = df, y = get(name_data_set))
+  errors <- anti_join(x = df, y = get(data_source_name))
   
   #prepare to return
-  fields_to_filter <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_ARTE", "COD_ORIGEN", "COD_TIPO_MUE", "PROCEDENCIA")
+  fields_to_filter <- c("COD_PUERTO", "FECHA", "COD_BARCO", variable)
+
+  if(nrow(errors)>0){
+    
+    errors <- errors[, fields_to_filter]
+    errors <- unique(errors)
+    errors <- errors[with(errors,order(fields_to_filter)),]
+    errors <- 
+    
+    #return
+    return(errors)  
+  } else {
+    return(data.frame("no error" = NULL ))
+  }
   
-  
-  errors <- errors %>%
-    select(one_of(fields_to_filter))%>%
-    arrange_(fields_to_filter)%>%
-    unique()
-  
-  #return
-  return(errors)
 }
 
 
@@ -117,8 +123,15 @@ check_variable_with_master <- function (variable, df){
 #' @return dataframe corrected
 correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data, conditional_variables, conditions) {
   
+  # check if the levels exists in df ...
+  levels_in_df <- levels(df[[variable]])
+  if (!(correct_data %in% levels_in_df)){ #if not ...
+    levels(df[[variable]]) <- c(levels(df[[variable]]), correct_data) # ... add it
+  }
+  
   if (missing(conditional_variables) && missing(conditions)) {
-    df[[variable]] <- mapvalues(df[[variable]], from = erroneus_data, to = correct_data)
+
+    df[df[[variable]]==erroneus_data, variable] <- correct_data
     # add to log file
     export_log_file("change", variable, erroneus_data, correct_data)
     #export file
@@ -136,11 +149,6 @@ correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data
     index_row_to_change <- which(data[[variable]]==erroneus_data)
     row_names<-row.names(data[index_row_to_change,])
     row_to_change <- df[row_names,]
-    levels_in_df <- levels(df[[variable]])
-    # check if the levels exists in df ...
-    if (!(correct_data %in% levels_in_df)){ #if not ...
-      levels(df[[variable]]) <- c(levels(df[[variable]]), correct_data) # ... add it
-    }
     
     row_to_change[variable] <- correct_data
     df[row.names(df) %in% row_names,] <- row_to_change
@@ -232,7 +240,7 @@ check_month <- function(df){
   erroneus_months <- as.data.frame(unique(df$months))
   colnames(erroneus_months) <- c("FECHA")
   erroneus_months <- erroneus_months %>%
-    filter(FECHA != MONTH_STRING)
+    filter(FECHA != MONTH_AS_CHARACTER)
   erroneus_samples <- merge(x = df, y = erroneus_months, by.x = "months", by.y = "FECHA", all.y = TRUE)
   return(erroneus_samples)
 }
@@ -241,9 +249,9 @@ check_month <- function(df){
 # function to check the type of sample.
 # df: dataframe to check
 # return samples with:
-# - TIPO_MUE != to "CONCURRENTE EN LONJA"
+# - ESTRATEGIA != to "CONCURRENTE EN LONJA"
 # - except VORACERA_GC which must be "EN BASE A ESPECIE"
-check_type_sample <- function(df){
+check_strategy <- function(df){
 
   errors_not_voracera <- records[ which(records[["ESTRATO_RIM"]] != "VORACERA_GC"
                 & records[["ESTRATEGIA"]] != "CONCURRENTE EN LONJA"), ]
@@ -376,17 +384,17 @@ check_no_mixed_as_mixed <- function(df){
 
 
 # function to check if the categories in the IPD file are in the categories master of the SIRENO
-# df: dataframe
-# return: dataframe of samples with erroneus categories
+# df: data frame
+# return: data frame of samples with erroneous categories
 check_categories <- function(df){
   
-  maestro_categorias[["CONTROL"]] <- "OK"
+  categorias[["CONTROL"]] <- "OK"
   #errors <- merge(x = df, y = maestro_categorias, by.x = c("COD_PUERTO", "COD_ESP_MUE", "COD_CATEGORIA"), by.y = c("COD_PUERTO", "COD_ESP", "COD_CATEGORIA"), all.x = TRUE)
-  errors <- merge(x = df, y = maestro_categorias, by.x = c("COD_PUERTO", "COD_ESP_MUE", "COD_CATEGORIA"), by.y = c("PUECOD", "ESPCOD", "ESPCAT"), all.x = TRUE)
+  errors <- merge(x = df, y = categorias, by.x = c("COD_PUERTO", "COD_ESP_MUE", "COD_CATEGORIA"), by.y = c("COD_PUERTO", "COD_ESP", "COD_CATEGORIA"), all.x = TRUE)
   errors <- errors %>%
     filter(is.na(CONTROL)) %>%
-    select(COD_PUERTO, FECHA, COD_BARCO, COD_ESP_MUE, COD_CATEGORIA) %>%
-    arrange(COD_PUERTO, FECHA, COD_BARCO, COD_ESP_MUE, COD_CATEGORIA)
+    select(COD_PUERTO, COD_ESP_MUE, COD_CATEGORIA) %>%
+    arrange(COD_PUERTO, COD_ESP_MUE, COD_CATEGORIA)
   errors <- unique(errors)
   
   
@@ -395,8 +403,8 @@ check_categories <- function(df){
 
 # ---- function to check if any length has the EJEM_MEDIDOS as NA
 #' function to check if any length has the EJEM_MEDIDOS as NA.
-#' @param df: dataframe to check
-#' @return dataframe with errors
+#' @param df: data frame to check
+#' @return data frame with errors
 
 check_measured_individuals_na <- function(df){
   errors <- df %>%
@@ -429,6 +437,10 @@ one_category_with_different_landing_weights <- function(df){
   fields_to_count <- c(BASE_FIELDS, "COD_ESP_MUE", "COD_CATEGORIA")
   df_filtrado <- df %>%
     distinct() %>%
+    # group_by(COD_PUERTO,FECHA,COD_BARCO,ESTRATO_RIM,COD_TIPO_MUE,COD_ESP_MUE, COD_CATEGORIA)%>%
+    # mutate(number_desem=row_number()) %>%
+    # group_by(COD_PUERTO,FECHA,COD_BARCO,ESTRATO_RIM,COD_TIPO_MUE,COD_ESP_MUE, COD_CATEGORIA, number_desem)%>%
+    # mutate(cound_desem = n())
     count_(fields_to_count) %>%
     filter(n>1)
 }
@@ -443,7 +455,7 @@ one_category_with_different_landing_weights <- function(df){
 export_to_excel <- function(df){
   month_in_spanish <- c("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
   
-  filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH_STRING)], "_", YEAR, "_ICES.xlsx", sep="")
+  filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH_AS_CHARACTER)], "_", YEAR, "_ICES.xlsx", sep="")
   filepath = paste(PATH_FILES, filename, sep = "/")
   
   colnames(df) <- c("FECHA","PUERTO","BUQUE","ARTE","ORIGEN","METIER","PROYECTO",
@@ -529,3 +541,108 @@ recode000000Ship <- function(df){
   return(df)
   
 }
+
+#' Check code: 1064
+#' Check variable with prescriptions dataset. Use the
+#' prescripciones_rim_mt2_coherencia dataset from sapmuebase.
+#' @param df Dataframe where the variable to check is.
+#' @param variable Variable to check as character. Allowed variables:
+#' ESTRATO_RIM, COD_PUERTO, COD_ORIGEN, COD_ARTE, METIER_DCF and CALADERO_DCF.
+#' @return dataframe with errors
+checkVariableWithPrescriptions <- function(df, variable) {
+  
+  valid_variables = c("ESTRATO_RIM","COD_PUERTO","COD_ORIGEN","COD_ARTE",
+                      "METIER_DCF", "CALADERO_DCF")
+  if (!(variable %in% valid_variables)) {
+    stop(paste("This function is not available for variable", variable))
+  }
+  
+  allowed <- sapmuebase::prescripciones_rim_mt2_coherencia[,variable]
+  
+  df <- df[!(df[[variable]] %in% allowed), ]
+
+  
+  fields <- BASE_FIELDS
+  
+  if (!(variable %in% BASE_FIELDS)) {
+    fields <- c(BASE_FIELDS, variable)
+  }
+  
+  df <- df[, fields]
+  
+  df <- unique(df)
+  
+  return(df)
+  
+}
+
+#' Check code: 1067
+# Check if the code type sample is different of MT1A or MT2A -------------------
+#
+#' Check if the code type sample is different of MT1A or MT2A
+#' 
+#' @return dataframe with errors
+#'
+checkCodeTypeSample <- function(){
+  errors <- records[!(records[["COD_TIPO_MUE"]] %in% c("MT1A", "MT2A")), ]
+  if(nrow(errors) > 0){
+    return(errors)
+  } else {
+    return(data.frame("no_error" = NULL))
+  }
+}
+
+#' Check code: 1068
+#' Check if the variables ESTRATO_RIM, COD_PUERTO, COD_ORIGEN and
+#' COD_ARTE are coherent with MT2 rim prescriptions. ---------------------------
+#' @return dataframe with errors.
+coherencePrescriptionsRimMt2 <- function(df){
+  
+  df <- df[df[["COD_TIPO_MUE"]]=="MT2A", ]
+  
+  fields <- c("COD_PUERTO", "COD_ARTE", "COD_ORIGEN", "ESTRATO_RIM", "FECHA", "COD_BARCO", "COD_TIPO_MUE")
+  
+  errors <- unique(df[, fields])
+  errors <- merge(errors,
+                  sapmuebase::prescripciones_rim_mt2_coherencia,
+                  by=c("COD_PUERTO", "COD_ARTE", "COD_ORIGEN", "ESTRATO_RIM"),
+                  all.x = TRUE)
+  if(nrow(errors)>0){
+    # errors <- humanize(errors)
+    errors <- errors[is.na(errors[["PESQUERIA"]]), c(fields)]
+  }
+  
+}
+
+
+#' Check code: 1072
+#' Check if the dni of the sampler is in SIRENO database
+#' @return dataframe with errors, if there are any.
+checkDni <- function(df){
+  #TODO: detect if doesn't exists the dni_rim.csv file, just in case
+  
+  dni_rim <- importCsvSAPMUE("./private/dni_rim.csv")
+  dni_rim <- gsub("[a-zA-Z]+", "", dni_rim[,"nif"])
+  
+  err <- unique(df[,"COD_MUESTREADOR"])
+  
+  err <- data.frame("DNI" = err[!(err %in% dni_rim)])
+  
+  return(err)
+  
+}
+
+#' Check code: 1073
+#' Check if a SHIP / DATE combination have different port, gear, origin, rim
+#' stratum, project code or type of sample.
+#' Require records dataframe
+checkShipDate <- function(){
+  err <- records[, c("COD_BARCO", "FECHA", "COD_PUERTO", "COD_ARTE",
+                     "COD_ORIGEN", "ESTRATO_RIM", "COD_PROYECTO",
+                     "COD_TIPO_MUE")] %>%
+    unique()%>%
+    group_by(COD_BARCO, FECHA) %>%
+    mutate(dups = n()>1) %>%
+    filter(dups == TRUE)
+}
+

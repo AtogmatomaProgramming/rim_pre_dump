@@ -8,3 +8,4 @@ IPDtoSIRENO.Rproj
 *.xlsx
 #all files in data directory
 /data/*
+/private/*
