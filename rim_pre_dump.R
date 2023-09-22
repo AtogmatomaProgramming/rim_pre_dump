@@ -1,13 +1,11 @@
-#### IPDtoSIRENO
-#### Script to check the monthly data dump from IPD database previous to SIRENO upload
-####
-#### Return csv files with errors detected
-# 
-#### author: Marco A. Ámez Fernandez
-#### email: ieo.marco.a.amez@gmail.com
-####
-#### files required: file from IPD with data to save in SIRENO and IPD_to_SIRENO.R
-#### with all the functions used in this script
+# IPDtoSIRENO
+# Script to check the monthly data dump from IPD database previous to SIRENO
+# upload.
+# Return csv files with errors detected
+# author: Marco A. Ámez Fernandez
+# email: ieo.marco.a.amez@gmail.com
+# files required: file from IPD with data to save in SIRENO and IPD_to_SIRENO.R
+# with all the functions used in this script
 
 #Hola Marco, sigo jugando con el fork
 
