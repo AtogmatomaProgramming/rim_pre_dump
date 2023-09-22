@@ -185,6 +185,7 @@ check_dni <- checkDni(records)
 # function this mistakes are detected. This errors are separated by influence area and
 # must be send to the sups to fix it after save it in SIRENO
 check_one_category_with_different_landing_weights <- one_category_with_different_landing_weights(records)
+
 # Create files to send to sups:
 check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
   errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weights, "COD_PUERTO")
@@ -252,15 +253,15 @@ records[is.na(records$COD_PAIS),c("COD_PAIS")] <- 724
 # records <- recode000000Ship(records)
 # TODO: remove this.
 
-
-# source: https://github.com/awalker89/openxlsx/issues/111
-Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
-export_to_excel(records)
-
-
-# BACKUP SCRIPTS AND RELATED FILES ----
-# first save all files opened
-rstudioapi::documentSaveAll()
-# and the backup the scripts and files:
-sapmuebase::backupScripts(FILES_TO_BACKUP, path_backup = PATH_BACKUP)
-# backup_files()
+# 
+# # source: https://github.com/awalker89/openxlsx/issues/111
+# Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
+# export_to_excel(records)
+# 
+# 
+# # BACKUP SCRIPTS AND RELATED FILES ----
+# # first save all files opened
+# rstudioapi::documentSaveAll()
+# # and the backup the scripts and files:
+# sapmuebase::backupScripts(FILES_TO_BACKUP, path_backup = PATH_BACKUP)
+# # backup_files()
