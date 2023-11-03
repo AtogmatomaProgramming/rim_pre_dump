@@ -441,7 +441,7 @@ one_category_with_different_landing_weights <- function(df){
     # mutate(number_desem=row_number()) %>%
     # group_by(COD_PUERTO,FECHA,COD_BARCO,ESTRATO_RIM,COD_TIPO_MUE,COD_ESP_MUE, COD_CATEGORIA, number_desem)%>%
     # mutate(cound_desem = n())
-    count_(fields_to_count) %>%
+    count(fields_to_count) %>%
     filter(n>1)
 }
 
