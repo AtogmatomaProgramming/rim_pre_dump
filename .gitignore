@@ -3,7 +3,7 @@
 .Rhistory
 .RData
 .Ruserdata
-.Rproj
+*.Rproj
 *.xls
 *.xlsx
 #all files in data directory
