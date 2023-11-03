@@ -7,9 +7,6 @@
 # files required: file from IPD with data to save in SIRENO and IPD_to_SIRENO.R
 # with all the functions used in this script
 
-#Borrado mensaje "Hola Marco"
-#Cambios en la rama develop
-
 # PACKAGES ---------------------------------------------------------------------
 
 library(dplyr)
@@ -35,11 +32,11 @@ library(openxlsx)
 
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES: ----
 
-PATH_FILES <- file.path(getwd(), "data/2023/2023_04")
+PATH_FILES <- file.path(getwd(), "data/2023/2023_07")
 
-FILENAME <- "muestreos_3_4_ICES.txt"
+FILENAME <- "muestreos_7_8_ICES.txt"
 
-MONTH <- 4
+MONTH <- 7
 
 YEAR <- "2023"
 
@@ -108,7 +105,7 @@ check_puerto <- humanize(check_puerto)
 check_arte <- checkVariableWithPrescriptions(records, "COD_ARTE")
 check_arte <- humanize(check_arte)
 # there are 399 (palangres) which must be 302
-records[records$COD_ARTE=="399", "COD_ARTE"] <- "302"
+# records[records$COD_ARTE=="399", "COD_ARTE"] <- "302"
 
 
 check_origen <- checkVariableWithPrescriptions(records, "COD_ORIGEN")
@@ -232,10 +229,10 @@ not_filtered_vessels <- not_filtered_vessels[is.na(not_filtered_vessels$ESTADO),
 
 
 #check if there are any vessel register without COD_PAIS
-vessel_withoud_country_code <- unique(records[is.na(records$COD_PAIS),c("COD_BARCO")])
-vessel_withoud_country_code <- data.frame("COD_BARCO"=vessel_withoud_country_code)
+vessel_without_country_code <- unique(records[is.na(records$COD_PAIS),c("COD_BARCO")])
+vessel_without_country_code <- data.frame("COD_BARCO"=vessel_without_country_code)
 # First, I check in SIRENO if this vessels are in the fleet master.
-vessel_withoud_country_code <- merge(vessel_withoud_country_code,
+vessel_without_country_code <- merge(vessel_without_country_code,
                                      fleet_sireno,
                                      all.x = TRUE,
                                      by.x = "COD_BARCO",
@@ -253,15 +250,15 @@ records[is.na(records$COD_PAIS),c("COD_PAIS")] <- 724
 # records <- recode000000Ship(records)
 # TODO: remove this.
 
-# 
-# # source: https://github.com/awalker89/openxlsx/issues/111
-# Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
-# export_to_excel(records)
-# 
-# 
-# # BACKUP SCRIPTS AND RELATED FILES ----
-# # first save all files opened
-# rstudioapi::documentSaveAll()
-# # and the backup the scripts and files:
-# sapmuebase::backupScripts(FILES_TO_BACKUP, path_backup = PATH_BACKUP)
-# # backup_files()
+
+# source: https://github.com/awalker89/openxlsx/issues/111
+Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
+export_to_excel(records)
+
+
+# BACKUP SCRIPTS AND RELATED FILES ----
+# first save all files opened
+rstudioapi::documentSaveAll()
+# and the backup the scripts and files:
+sapmuebase::backupScripts(FILES_TO_BACKUP, path_backup = PATH_BACKUP)
+# backup_files()
