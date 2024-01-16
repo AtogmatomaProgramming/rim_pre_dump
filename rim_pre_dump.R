@@ -32,16 +32,16 @@ library(openxlsx)
 
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES: ----
 
-PATH_FILES <- file.path(getwd(), "data/2023/2023_07")
+PATH_FILES <- file.path(getwd(), "data/2023/2023_11")
 
-FILENAME <- "muestreos_7_8_ICES.txt"
+FILENAME <- "muestreos_11_ICES.txt"
 
-MONTH <- 7
+MONTH <- 11
 
 YEAR <- "2023"
 
 # VARIABLES --------------------------------------------------------------------
-ERRORS <- list() #list with all errors found in dataframes
+ERRORS <- list() #list with all errors found in data frames
 #MESSAGE_ERRORS<- list() #list with the errors
 
 PATH_FILE <- getwd()
@@ -85,6 +85,44 @@ file_name <- paste0(file_name[1], '_raw_imported.csv')
 
 exportCsvSAPMUEBASE(records, file_name, path = PATH_FILES)
 
+
+#' Check code:
+#' Check variable with prescriptions data set. Use the
+#' metier_coherence data set from sapmuebase.
+#' @param df Dataframe where the variable to check is.
+#' @param variable Variable to check as character. Allowed variables:
+#' ESTRATO_RIM, COD_ORIGEN, COD_ARTE, METIER_DCF and CALADERO_DCF.
+#' @return dataframe with errors
+checkVariableWithMetierCoherence <- function(df, variable){
+
+    valid_variables = c("ESTRATO_RIM", "COD_ORIGEN", "COD_ARTE", "METIER_DCF",
+                        "CALADERO_DCF")
+
+    if (!(variable %in% valid_variables)) {
+      stop(paste("This function is not available for variable ", variable))
+    }
+
+    allowed <- sapmuebase::metier_coherence[,variable]
+
+    df <- df[!(df[[variable]] %in% allowed), ]
+
+
+    fields <- BASE_FIELDS
+
+    if (!(variable %in% BASE_FIELDS)) {
+      fields <- c(BASE_FIELDS, variable)
+    }
+
+    df <- df[, fields]
+
+    df <- unique(df)
+
+    return(df)
+
+}
+
+
+
 # START CHECK ------------------------------------------------------------------
 # if any error is detected use function:
 # correct_levels_in_variable(df, variable, erroneus_data, correct_data, conditional_variables, conditions)
@@ -94,72 +132,47 @@ exportCsvSAPMUEBASE(records, file_name, path = PATH_FILES)
 check_mes <- check_month(records)
 
 
-check_estrato_rim <- checkVariableWithPrescriptions(records, "ESTRATO_RIM")
-# check_estrato_rim <- humanize(check_estrato_rim)
+# Not longer use presctiptions
+# check_estrato_rim <- checkVariableWithPrescriptions(records, "ESTRATO_RIM")
+# check_puerto <- checkVariableWithPrescriptions(records, "COD_PUERTO")
+# check_arte <- checkVariableWithPrescriptions(records, "COD_ARTE")
+# check_origen <- checkVariableWithPrescriptions(records, "COD_ORIGEN")
+# coherence_prescription_rim_mt2 <- coherencePrescriptionsRimMt2(records)
 
-
-
-check_puerto <- checkVariableWithPrescriptions(records, "COD_PUERTO")
-check_puerto <- humanize(check_puerto)
-
-check_arte <- checkVariableWithPrescriptions(records, "COD_ARTE")
+check_estrato_rim <- checkVariableWithMetierCoherence(records, "ESTRATO_RIM")
+check_arte <- checkVariableWithMetierCoherence(records, "COD_ARTE")
 check_arte <- humanize(check_arte)
-# there are 399 (palangres) which must be 302
-# records[records$COD_ARTE=="399", "COD_ARTE"] <- "302"
+check_origen <- checkVariableWithMetierCoherence(records, "COD_ORIGEN")
 
 
-check_origen <- checkVariableWithPrescriptions(records, "COD_ORIGEN")
-# check_origen <- humanize(check_origen)
-
+# TODO: ¡¡¡¡¡!!!!! create checkMetierCoherence function!!
+records[records$ESTRATO_RIM=="CERCO_GC" & records$COD_ORIGEN=="010", "COD_ORIGEN"] <- "011"
 
 check_procedencia <- checkVariableWithMaster("PROCEDENCIA", records)
 
-
 check_estrategia <- check_strategy(records)
 
-
-coherence_prescription_rim_mt2 <- coherencePrescriptionsRimMt2(records)
-coherence_prescription_rim_mt2 <- humanize(coherence_prescription_rim_mt2)
-# Right now some samplers can sample the rim stratum in different ports, so
-# doesn't match completely with the requirements.
-# And there are some CERCO_GC with 010 origin, so change it to 011
-records[records$ESTRATO_RIM == "CERCO_GC" & records$COD_ORIGEN == "010", "COD_ORIGEN"] <- "011"
-
-
-check_duplicados_tipo_muestreo <- check_duplicates_type_sample(records)
-# There aren't duplicated samples.
-# Example to remove a MT1 duplicated:
-# duplicados_tipo_muestreo <- records %>%
-#   select(COD_TIPO_MUE, FECHA, COD_BARCO ) %>%
-#   unique()%>%
-#   group_by(FECHA, COD_BARCO) %>%
-#   mutate(number = n()) %>%
-#   unique() %>%
-#   filter(number > 1) %>%
-#   select(FECHA, COD_BARCO)%>%
-#   unique()
-# records <- records[!(records$FECHA==duplicados_tipo_muestreo$FECHA & records$COD_BARCO==duplicados_tipo_muestreo$COD_BARCO & records$COD_TIPO_MUE=="MT1A"), ]
+# The MT1 samples are not longer sampled.
+# check_duplicados_tipo_muestreo <- check_duplicates_type_sample(records)
+# check_falsos_mt2 <- check_false_mt2(records)
+# check_falsos_mt1 <- check_false_mt1(records)
 
 # TODO: Change the name of this function:
 check_ship_date <- checkShipDate()
-# There are two samplers with COD_BARCO 000000, but with different port.
-
-
-check_falsos_mt2 <- check_false_mt2(records)
-
-
-check_falsos_mt1 <- check_false_mt1(records)
-
 
 check_barcos_extranjeros <- check_foreing_ship(records)
 # The function remove_MT1_trips_foreing_vessels(df) remove all the MT1 trips
 # with foreign vessels so use it just in case.
 # humanize(check_barcos_extranjeros)
 
-
 check_especies_mezcla_no_mezcla <- check_mixed_as_no_mixed(records)
 # humanize(check_especies_mezcla_no_mezcla)
 
+check_especies_mezcla_categoria <- errorsMixedSpeciesInCategory(records)
+# exportCsvSAPMUEBASE(check_especies_mezcla_categoria, "errors_mixed_sp_2023_07.csv")
+
+check_not_mixed_species_in_sample<- errorsNoMixedSpeciesInSample(records)
+# exportCsvSAPMUEBASE(check_not_mixed_species_in_sample, "check_not_mixed_species_in_sample.csv")
 
 check_categorias <- check_categories(records)
 check_categorias <- humanize(check_categorias)
@@ -175,8 +188,6 @@ check_ejemplares_medidos_na <- check_measured_individuals_na(records)
 
 check_dni <- checkDni(records)
 
-
-
 # Sometimes, one category with various species of the category has various landing weights sampled.
 # This is not possible to save it in SIRENO, so with one_category_with_different_landing_weights(df)
 # function this mistakes are detected. This errors are separated by influence area and
@@ -185,18 +196,25 @@ check_one_category_with_different_landing_weights <- one_category_with_different
 
 # Create files to send to sups:
 check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
-  errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weights, "COD_PUERTO")
-  #remove empty data frames from list:
-  errors_category <- Filter(function(x){
-                              nrow(x) > 0
-                            }, errors_category)
+errors_category <- separateDataframeByInfluenceArea(
+  check_one_category_with_different_landing_weights,
+  "COD_PUERTO")
+#remove empty data frames from list:
+errors_category <- Filter(function(x){
+                            nrow(x) > 0
+                          }, errors_category)
 
-  suf <- paste0("_", YEAR, "_", MONTH_AS_CHARACTER, "_", "errors_categorias_con_varios_pesos_desembarcados")
+suf <- paste0("_",
+              YEAR,
+              "_",
+              MONTH_AS_CHARACTER,
+              "_",
+              "errors_categorias_con_varios_pesos_desembarcados")
 
-  exportListToXlsx(errors_category, suffix = suf, path = PATH_FILES)
+exportListToXlsx(errors_category, suffix = suf, path = PATH_FILES)
 
-# All the data saved by IPD are lengths samples so the MEDIDA variable can't be "P" ("Pesos", weights)
-# or empty. The function fix_medida_variable(df) fix it:
+# All the data saved by IPD are lengths samples so the MEDIDA variable can't be
+# "P" ("Pesos", weights) or empty. The function fix_medida_variable(df) fix it:
 records <- fix_medida_variable(records)
 
 
@@ -244,12 +262,6 @@ records[is.na(records$COD_PAIS),c("COD_PAIS")] <- 724
 # export_log_file("Change", "COD_PAIS", "NA", "724")
 # TODO: this field is bumped in SIRENO? Ask Ricardo, if it doesn't is not
 # necessary fix it.
-
-# Change the 000000 COD_BARCO ('DESCONOCIDO' ship) from VORACERA_GC with 205509
-# ('DESCONOCIDO VORAZ LONJA')
-# records <- recode000000Ship(records)
-# TODO: remove this.
-
 
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
