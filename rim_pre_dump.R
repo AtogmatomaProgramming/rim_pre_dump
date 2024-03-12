@@ -32,13 +32,13 @@ library(openxlsx)
 
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES: ----
 
-PATH_FILES <- file.path(getwd(), "data/2023/2023_11")
+PATH_FILES <- file.path(getwd(), "data/2024/2024_01")
 
-FILENAME <- "muestreos_11_ICES.txt"
+FILENAME <- "muestreos_1_ICES.txt"
 
-MONTH <- 11
+MONTH <- 1
 
-YEAR <- "2023"
+YEAR <- "2024"
 
 # VARIABLES --------------------------------------------------------------------
 ERRORS <- list() #list with all errors found in data frames
@@ -177,6 +177,8 @@ check_not_mixed_species_in_sample<- errorsNoMixedSpeciesInSample(records)
 check_categorias <- check_categories(records)
 check_categorias <- humanize(check_categorias)
 check_categorias <- unique(check_categorias)
+# One category has incorrect code:
+records[records$COD_ESP_MUE=="10431" & records$COD_CATEGORIA=="1701", "COD_CATEGORIA"] <- "1401"
 # unique(check_categorias[, c("PUERTO", "COD_PUERTO", "COD_ESP_MUE", "COD_CATEGORIA")])
 # all the categories are correct in Sireno
 
@@ -220,7 +222,10 @@ records <- fix_medida_variable(records)
 
 # By default, the IPD file hasn't the country variable filled. The
 # create_variable_code_country(df) function fix it:
+# This does not work:
 records <- create_variable_code_country(records)
+# Is mandatory to create the variable because is need in export_to_excel()
+records$COD_PAIS <- NA
 
 
 # Check if there are vessels not registered in fleet census
@@ -262,6 +267,7 @@ records[is.na(records$COD_PAIS),c("COD_PAIS")] <- 724
 # export_log_file("Change", "COD_PAIS", "NA", "724")
 # TODO: this field is bumped in SIRENO? Ask Ricardo, if it doesn't is not
 # necessary fix it.
+
 
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
