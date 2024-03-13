@@ -467,27 +467,6 @@ export_to_excel <- function(df){
 }
 
 
-# ---- function to add country variable ----------------------------------------
-#
-#' Add variable country code
-#
-#' Add variable country code (COD_PAIS) at the end of the dataframe
-#' @param df: dataframe to modify
-#' @return Return a dataframe with the country code variable
-#'
-create_variable_code_country <- function(df){
-  ships <- maestro_flota_sireno[,c("BARCOD", "PAICOD")]
-  with_country <- merge(x = df, y = ships, by.x = "COD_BARCO", by.y = "BARCOD", all.x = TRUE)
-  #the order of the variables has been changed in the merge (I think), so
-  #we need to reorder:
-  with_country <- with_country[,c(2,3,1,4:length(with_country))]
-  names(with_country)[names(with_country) == "PAICOD"] <- "COD_PAIS"
-
-  export_log_file("Add", "COD_PAIS")
-
-  return (with_country)
-}
-
 # ---- function to fix MEDIDA variable -----------------------------------------
 #
 #' Change the content of variable MEDIDA to "T" ("Tallas", lenghts).
@@ -495,8 +474,8 @@ create_variable_code_country <- function(df){
 #' All the data are lenthts samples so this variable can't be "P" ("Pesos", weights)
 #' or empty.
 #
-#' @param df: dataframe to modify
-#' @return Return a dataframe with the MEDIDA variable fixed
+#' @param df: data frame to modify
+#' @return Return a data frame with the MEDIDA variable fixed
 #'
 fix_medida_variable <- function (df) {
 

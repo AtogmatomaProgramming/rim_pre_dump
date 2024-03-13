@@ -220,12 +220,7 @@ exportListToXlsx(errors_category, suffix = suf, path = PATH_FILES)
 records <- fix_medida_variable(records)
 
 
-# By default, the IPD file hasn't the country variable filled. The
-# create_variable_code_country(df) function fix it:
-# This does not work:
-records <- create_variable_code_country(records)
-# Is mandatory to create the variable because is need in export_to_excel()
-records$COD_PAIS <- NA
+
 
 
 # Check if there are vessels not registered in fleet census
@@ -251,22 +246,13 @@ not_filtered_vessels <- merge(not_filtered_vessels,
 not_filtered_vessels <- not_filtered_vessels[is.na(not_filtered_vessels$ESTADO),]
 
 
-#check if there are any vessel register without COD_PAIS
-vessel_without_country_code <- unique(records[is.na(records$COD_PAIS),c("COD_BARCO")])
-vessel_without_country_code <- data.frame("COD_BARCO"=vessel_without_country_code)
-# First, I check in SIRENO if this vessels are in the fleet master.
-vessel_without_country_code <- merge(vessel_without_country_code,
-                                     fleet_sireno,
-                                     all.x = TRUE,
-                                     by.x = "COD_BARCO",
-                                     by.y = "COD.BARCO")
+# By default, the IPD file hasn't the country variable filled. Create and fill
+# it with "724" Spain
+records$COD_PAIS <- 724
 
-# In this case all of them are.
-# So this vessels must be saved in SIRENO with 724 code country, so change it:
-records[is.na(records$COD_PAIS),c("COD_PAIS")] <- 724
-# export_log_file("Change", "COD_PAIS", "NA", "724")
-# TODO: this field is bumped in SIRENO? Ask Ricardo, if it doesn't is not
-# necessary fix it.
+# Check if there are any vessel which is SIRENO code doesn't start with 2 or 0
+# and five digits more. In case there are any, check if it is a foreing ship.
+which(!grepl("^[2,0]\\d{5}", records$COD_BARCO ))
 
 
 # source: https://github.com/awalker89/openxlsx/issues/111
