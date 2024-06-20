@@ -471,7 +471,7 @@ export_to_excel <- function(df){
 #
 #' Change the content of variable MEDIDA to "T" ("Tallas", lenghts).
 #'
-#' All the data are lenthts samples so this variable can't be "P" ("Pesos", weights)
+#' All the data are lengthts samples so this variable can't be "P" ("Pesos", weights)
 #' or empty.
 #
 #' @param df: data frame to modify
