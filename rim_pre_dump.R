@@ -32,11 +32,11 @@ library(openxlsx)
 
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES: ----
 
-PATH_FILES <- file.path(getwd(), "data/2024/2024_01")
+PATH_FILES <- file.path(getwd(), "data/2024/2024_04")
 
-FILENAME <- "muestreos_1_ICES.txt"
+FILENAME <- "muestreos_4_ICES.txt"
 
-MONTH <- 1
+MONTH <- 4
 
 YEAR <- "2024"
 
@@ -69,7 +69,6 @@ source('rim_pre_dump_functions.R')
 
 # IMPORT FILES -----------------------------------------------------------------
 records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_FILES)
-
 # Import sireno fleet
 # Firstly download the fleet file from Informes --> Listados --> Por proyecto
 # in SIRENO, and then:
@@ -165,28 +164,22 @@ check_barcos_extranjeros <- check_foreing_ship(records)
 # with foreign vessels so use it just in case.
 # humanize(check_barcos_extranjeros)
 
-check_especies_mezcla_no_mezcla <- check_mixed_as_no_mixed(records)
-# humanize(check_especies_mezcla_no_mezcla)
-
+# this error is only for  ******* pourposes
 check_especies_mezcla_categoria <- errorsMixedSpeciesInCategory(records)
 # exportCsvSAPMUEBASE(check_especies_mezcla_categoria, "errors_mixed_sp_2023_07.csv")
 
-check_not_mixed_species_in_sample<- errorsNoMixedSpeciesInSample(records)
+check_not_mixed_species_in_sample<- errorsMixedSpeciesAsNoMixed(records)
 # exportCsvSAPMUEBASE(check_not_mixed_species_in_sample, "check_not_mixed_species_in_sample.csv")
 
 check_categorias <- check_categories(records)
 check_categorias <- humanize(check_categorias)
 check_categorias <- unique(check_categorias)
-# One category has incorrect code:
-records[records$COD_ESP_MUE=="10431" & records$COD_CATEGORIA=="1701", "COD_CATEGORIA"] <- "1401"
-# unique(check_categorias[, c("PUERTO", "COD_PUERTO", "COD_ESP_MUE", "COD_CATEGORIA")])
+unique(check_categorias[, c("PUERTO", "COD_PUERTO", "COD_ESP_MUE", "COD_CATEGORIA")])
 # all the categories are correct in Sireno
 
 check_ejemplares_medidos_na <- check_measured_individuals_na(records)
 # if any EJEM_MEDIDOS is NA, must be change to 0.
 # TODO: make a function to fix it automatically
-# records <- records[which(!is.na(records$EJEM_MEDIDOS)),]
-
 
 check_dni <- checkDni(records)
 
@@ -219,25 +212,24 @@ exportListToXlsx(errors_category, suffix = suf, path = PATH_FILES)
 # "P" ("Pesos", weights) or empty. The function fix_medida_variable(df) fix it:
 records <- fix_medida_variable(records)
 
-
-
-
-
 # Check if there are vessels not registered in fleet census
-not_registered_vessels <- unique(records[,"COD_BARCO", drop=FALSE])
+not_registered_vessels <- unique(records[, "COD_BARCO", drop = FALSE])
 not_registered_vessels <- merge(not_registered_vessels,
                                 fleet_sireno,
                                 by.x = "COD_BARCO",
                                 by.y = "COD.BARCO",
                                 all.x = TRUE)
-registered <- c("ALTA DEFINITIVA", "G - A.P. POR NUEVA CONSTRUCCION")
+registered <- c("ALTA DEFINITIVA", "G - A.P. POR NUEVA CONSTRUCCION", "H - A.P. POR REACTIVACION")
 not_registered_vessels <- not_registered_vessels[!not_registered_vessels$ESTADO %in% registered,]
 not_registered_vessels <- not_registered_vessels[!is.na(not_registered_vessels$ESTADO),]
+#Change the vessel "PARA LOS TRES" to "PARA LOS TRES I"
+# levels(records$COD_BARCO) <- c(levels(records$COD_BARCO), "209343")
+# records[records$COD_BARCO == "022302", "COD_BARCO"] <- "209343"
 
 
 # Check if there are vessels not filtered in ICES project. In this case a
 # a warning should be sent to Ricardo with the data upload in Sireno.
-not_filtered_vessels <- unique(records[,"COD_BARCO", drop=FALSE])
+not_filtered_vessels <- unique(records[, "COD_BARCO", drop = FALSE])
 not_filtered_vessels <- merge(not_filtered_vessels,
                                 fleet_sireno,
                                 by.x = "COD_BARCO",
@@ -251,7 +243,7 @@ not_filtered_vessels <- not_filtered_vessels[is.na(not_filtered_vessels$ESTADO),
 records$COD_PAIS <- 724
 
 # Check if there are any vessel which is SIRENO code doesn't start with 2 or 0
-# and five digits more. In case there are any, check if it is a foreing ship.
+# and five digits more. In case there are any, check if it is a foreign ship.
 which(!grepl("^[2,0]\\d{5}", records$COD_BARCO ))
 
 
