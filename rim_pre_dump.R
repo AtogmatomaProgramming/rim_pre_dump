@@ -10,6 +10,7 @@
 # PACKAGES ---------------------------------------------------------------------
 
 library(dplyr)
+library(blastula) # to send emails
 library(tools) #file_ext() and file_path_sans_ext
 # library(devtools) # Need this package to use install and install_github
 source("barbarize.R")
@@ -30,15 +31,36 @@ library(sapmuebase) # and load the library
 #install.packages("openxlsx")
 library(openxlsx)
 
+# FUNCTIONS --------------------------------------------------------------------
+# All the functions required in this script are located in
+# revision_volcado_functions.R file.
+source('rim_pre_dump_functions.R')
+
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES: ----
 
 PATH_FILES <- file.path(getwd(), "data/2024/2024_04")
+
+# Path to store in nextCloud the errors of "one category with different landing weights"
+
+PATH_SHARE_FOLDER <- "C:/Users/alberto.candelario/Desktop/nextCloud/SAP_RIM/RIM_data_review"
+
+# Name of the folder that is stored the items to send error mail
+
+PRIVATE_FOLDER_NAME <- "private"
 
 FILENAME <- "muestreos_4_ICES.txt"
 
 MONTH <- 4
 
 YEAR <- "2024"
+
+# Suffix to add to path. Use only in case MONTH is a vector of months. This
+# suffix will be added to the end of the path with a "_" as separation.
+suffix_multiple_months <- "annual_post_oab"
+
+# Suffix to add at the end of the export file name. This suffix will be added to
+# the end of the file name with a "_" as separation.
+suffix <- ""
 
 # VARIABLES --------------------------------------------------------------------
 ERRORS <- list() #list with all errors found in data frames
@@ -49,9 +71,20 @@ MONTH_AS_CHARACTER <- sprintf("%02d", MONTH)
 LOG_FILE <- paste("LOG_", YEAR, "_", MONTH_AS_CHARACTER, ".csv", sep="")
 PATH_LOG_FILE <- file.path(paste(PATH_FILES, LOG_FILE, sep = "/"))
 PATH_BACKUP_FILE <- file.path(paste(PATH_FILES, "backup", sep = "/"))
-PATH_ERRORS <- paste(PATH_FILES,"/errors",sep="")
+PATH_ERRORS <- file.path(PATH_FILES, "errors")
+PATH_PRIVATE_FILES <- file.path(getwd(), PRIVATE_FOLDER_NAME)
+
+#In order to create/check the existence of the backup and error directories
+
+DIR_BACKUP_ERRORS <- list(PATH_BACKUP_FILE, PATH_ERRORS)
+lapply(DIR_BACKUP_ERRORS, createDirectory)
+
 # path to store files as backup
 PATH_BACKUP <- file.path(PATH_FILES, "backup")
+
+IDENTIFIER <- createIdentifier(MONTH, YEAR, MONTH_AS_CHARACTER, suffix_multiple_months, suffix)
+# path to shared folder
+PATH_SHARE_LANDING_ERRORS <- file.path(PATH_SHARE_FOLDER, YEAR, IDENTIFIER)
 
 # list with the common fields used in all tables
 BASE_FIELDS <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_TIPO_MUE")
@@ -60,11 +93,11 @@ BASE_FIELDS <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_TIPO_MU
 FILES_TO_BACKUP <- c("rim_pre_dump.R",
                      "rim_pre_dump_functions.R")
 
+# Mail template to send different weight error
+EMAIL_TEMPLATE <- "errors_email.Rmd"
 
-# FUNCTIONS --------------------------------------------------------------------
-# All the functions required in this script are located in
-# revision_volcado_functions.R file.
-source('rim_pre_dump_functions.R')
+# Read the list of contact to send errors
+CONTACTS <- read.csv(file.path(PATH_PRIVATE_FILES, "contacts.csv"))
 
 
 # IMPORT FILES -----------------------------------------------------------------
@@ -72,7 +105,7 @@ records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_FILES)
 # Import sireno fleet
 # Firstly download the fleet file from Informes --> Listados --> Por proyecto
 # in SIRENO, and then:
-fleet_sireno <- read.csv(paste0(getwd(), "/private/", "IEOPROBARMARCO.TXT"),
+fleet_sireno <- read.csv(paste0(getwd(), "/private/", "IEOPROBARSIRENO.TXT"),
                          sep = ";", encoding = "latin1")
 fleet_sireno <- fleet_sireno[, c("COD.BARCO", "NOMBRE", "ESTADO")]
 fleet_sireno$COD.BARCO <- gsub("'", "", fleet_sireno$COD.BARCO)
@@ -168,7 +201,7 @@ check_barcos_extranjeros <- check_foreing_ship(records)
 check_especies_mezcla_categoria <- errorsMixedSpeciesInCategory(records)
 # exportCsvSAPMUEBASE(check_especies_mezcla_categoria, "errors_mixed_sp_2023_07.csv")
 
-check_not_mixed_species_in_sample<- errorsMixedSpeciesAsNoMixed(records)
+check_mixed_species_as_not_mixed <- check_mixed_as_not_mixed(records)
 # exportCsvSAPMUEBASE(check_not_mixed_species_in_sample, "check_not_mixed_species_in_sample.csv")
 
 check_categorias <- check_categories(records)
@@ -206,7 +239,39 @@ suf <- paste0("_",
               "_",
               "errors_categorias_con_varios_pesos_desembarcados")
 
-exportListToXlsx(errors_category, suffix = suf, path = PATH_FILES)
+exportListToXlsx(errors_category, suffix = suf, path = PATH_ERRORS)
+
+# SAVE FILES TO SHARED FOLDER --------------------------------------------------
+copyFilesToFolder(PATH_ERRORS, PATH_SHARE_LANDING_ERRORS)
+
+#To send the errors category for mail
+
+# The internal_links data frame must have two variables:
+# - AREA_INF: influence area with the values GC, GS, GN and AC.
+# - INTERNAL_LINK: with the link to the error file in its AREA_INF. If there
+# aren't any error file of a certain AREA_INF, must be set to "".
+# - NOTES: any notes to add to the email. If there aren't, must be set to "".
+accesory_email_info <- data.frame(
+  AREA_INF = c("AC",
+               "GC",
+               "GN",
+               "GS"),
+  LINK = c("",
+           "https://saco.csic.es/index.php/f/213076532",
+           "https://saco.csic.es/index.php/f/213076535",
+           ""),
+  NOTES = c("",
+            "",
+            "",
+            "")
+)
+
+
+sendErrorsByEmail(accesory_email_info = accesory_email_info,
+                  contacts = CONTACTS,
+                  credentials_file = "credentials",
+                  identification_sampling = IDENTIFIER)
+
 
 # All the data saved by IPD are lengths samples so the MEDIDA variable can't be
 # "P" ("Pesos", weights) or empty. The function fix_medida_variable(df) fix it:
@@ -223,8 +288,8 @@ registered <- c("ALTA DEFINITIVA", "G - A.P. POR NUEVA CONSTRUCCION", "H - A.P. 
 not_registered_vessels <- not_registered_vessels[!not_registered_vessels$ESTADO %in% registered,]
 not_registered_vessels <- not_registered_vessels[!is.na(not_registered_vessels$ESTADO),]
 #Change the vessel "PARA LOS TRES" to "PARA LOS TRES I"
-# levels(records$COD_BARCO) <- c(levels(records$COD_BARCO), "209343")
-# records[records$COD_BARCO == "022302", "COD_BARCO"] <- "209343"
+levels(records$COD_BARCO) <- c(levels(records$COD_BARCO), "209343")
+records[records$COD_BARCO == "022302", "COD_BARCO"] <- "209343"
 
 
 # Check if there are vessels not filtered in ICES project. In this case a
