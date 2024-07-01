@@ -368,7 +368,7 @@ check_foreing_ship <- function(df){
 # there are codes from mixed species
 # df: dataframe
 # return a dataframe with the samples with species saved as non mixed species
-check_mixed_as_no_mixed <- function(df){
+errorsMixedSpeciesAsNotMixed <- function(df){
   non_mixed <- merge(x=df, y=especies_mezcla["COD_ESP_CAT"], by.x = "COD_ESP_MUE", by.y = "COD_ESP_CAT")
   return(non_mixed)
 }

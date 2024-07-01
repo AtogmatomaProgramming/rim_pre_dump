@@ -168,7 +168,7 @@ check_barcos_extranjeros <- check_foreing_ship(records)
 check_especies_mezcla_categoria <- errorsMixedSpeciesInCategory(records)
 # exportCsvSAPMUEBASE(check_especies_mezcla_categoria, "errors_mixed_sp_2023_07.csv")
 
-check_not_mixed_species_in_sample<- errorsMixedSpeciesAsNoMixed(records)
+check_mixed_species_as_not_mixed<- errorsMixedSpeciesAsNotMixed(records)
 # exportCsvSAPMUEBASE(check_not_mixed_species_in_sample, "check_not_mixed_species_in_sample.csv")
 
 check_categorias <- check_categories(records)
