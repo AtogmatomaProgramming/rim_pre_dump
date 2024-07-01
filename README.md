@@ -1,6 +1,6 @@
 # Pre-dump revision of data saved in SIRENO
 
-### v.1.2.3
+### v.1.3.0
 
 The SAP project from the Spanish Institute of Oceanography (IEO) obtains, analyzes and prepare the necessary information to monitor the fishery activity in Northeast Atlantic.
 
