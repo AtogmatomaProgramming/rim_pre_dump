@@ -197,7 +197,7 @@ check_barcos_extranjeros <- check_foreing_ship(records)
 # with foreign vessels so use it just in case.
 # humanize(check_barcos_extranjeros)
 
-# this error is only for  ******* pourposes
+# this error is only for informational pourposes
 check_especies_mezcla_categoria <- errorsMixedSpeciesInCategory(records)
 # exportCsvSAPMUEBASE(check_especies_mezcla_categoria, "errors_mixed_sp_2023_07.csv")
 
