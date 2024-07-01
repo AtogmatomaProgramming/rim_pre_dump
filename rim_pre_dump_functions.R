@@ -631,3 +631,147 @@ errorsNoMixedSpeciesInSample <- function(df){
   err <- df[df[["COD_ESP_MUE"]] %in% mixed_sp, ]
   err <- humanize(err)
 }
+
+# ============ Annex I: imported functions from rim_post_dump ============
+
+#' Create identifier of the month/months, with suffix. Used to create the filenames
+#' and folders.
+#' @param month month or months used.
+#' @param year year used.
+#' @param month_as_character month as character.
+#' @param suffix_multiple_months Suffix used when multiple months are used.
+#' @param suffix Suffix used at the end of the file name. Usefull to have multiple error
+#' detections of the same month or year.
+createIdentifier <- function(month,
+                             year,
+                             month_as_character,
+                             suffix_multiple_months,
+                             suffix){
+  
+  suffix_complete <-  ""
+  
+  if(suffix != ""){
+    suffix_complete <- paste0("_", suffix)
+  }
+  
+  if (length(month) == 1 && month %in% seq(1:12)) {
+    return(paste0(year, "_", month_as_character, suffix_complete))
+  } else if (length(month) > 1 & all(month %in% seq(1:12))) {
+    return(paste0(year, "_", suffix_multiple_months, suffix_complete))
+  }
+  
+}
+
+
+#' Copy all the error files generated to a shared folder.
+#' Used to copy errors files generated to the shared folder
+copyFilesToFolder <- function (path_errors_from, path_errors_to){
+  
+  # test if path_errors_from exists
+  ifelse(!file.exists(path_errors_from), stop(paste("Folder", path_errors_from, "does not exists.")), FALSE)
+  
+  # test if path_errors_from have files
+  ifelse(length(list.files(path_errors_from))==0, stop(paste("Folder", path_errors_from, "doesn't have files.")), FALSE)
+  
+  # if the share errors directory does not exists, create it:
+  ifelse(!dir.exists(path_errors_to), dir.create(path_errors_to), FALSE)
+  
+  # test if there are files with the same name in folder. In this case,
+  # nothing is saved.
+  files_list_to <- list.files(path_errors_to)
+  
+  files_list_from <- list.files(path_errors_from)
+  
+  if(any(files_list_from %in% files_list_to)){
+    ae <- which(files_list_from %in% files_list_to)
+    ae <- paste(files_list_from[ae], collapse = ", ")
+    stop(paste("The file(s)", ae, "already exist(s). Nothing has been saved" ))
+    
+  }
+  
+  files_list_from <- file.path(path_errors_from, files_list_from)
+  file.copy(from=files_list_from, to=path_errors_to)
+  
+}
+
+
+#' Send errors files by email.
+#' @param accesory_email_info: df with two variables: AREA_INF (with the values GC,
+#' GS, GN and AC) and INTERNAL_LINK, with the link to the file.
+#' @param contacts: contacts data frame.
+#' @param credentials_file: file created with the function creds_file() from
+#' blastula package. Stored in private folder.
+#' @details
+#' The internal_links data frame must have two variables:
+#' - AREA_INF: influence área with the values GC, GS, GN and AC, of the
+#' - LINK: with the link to the error file in its AREA_INF. If there
+#' aren't any error file of a certain AREA_INF, the LINK must be set
+#' to "" or NA.
+#'
+#' The contacts data frame contains the different roles of the personal and its
+#' email to send them the error files. The roles are:
+#' - GC, GS, GN and AC: the supervisors of the influence areas. In the email,
+#' correspond to "to" field.
+#' - sender: person responsible for sending the files. In the email correspond
+#' to "from" field.
+#' - cc: related people to whom the email should also be sent. In the email
+#' correspond to "cc" field.
+#' This data set is obtained from the file contacts.csv stored in private folder
+#' due to the confidential information contained in it. The contacts.csv file
+#' must have a comma separated format with two fields: ROLE and EMAIL. The first
+#' line must contain the name of the variables.
+#'
+#' @require
+sendErrorsByEmail <- function(accesory_email_info, contacts, credentials_file,
+                              identification_sampling){
+  
+  apply(accesory_email_info, 1, function(x){
+    
+    if(x[["LINK"]] != ""){
+      
+      to <- contacts[contacts[["ROLE"]] == x[["AREA_INF"]] | contacts[["ROLE"]] == "sender", "EMAIL"]
+      from <- contacts[contacts[["ROLE"]] == "sender", "EMAIL"]
+      cc <- contacts[contacts[["ROLE"]] == "cc", "EMAIL"]
+      
+      # subject = paste0(YEAR,
+      #                  "_",
+      #                  sprintf("%02d", as.numeric(MONTH)),
+      #                  "_",
+      #                  x[["AREA_INF"]],
+      #                  " -- errores muestreos RIM")
+      
+      subject = paste0(identification_sampling, " ",
+                       x[["AREA_INF"]],
+                       " -- errores muestreos RIM")
+      
+      rmd_email <- render_email(EMAIL_TEMPLATE)
+      
+      smtp_send(email = rmd_email,
+                to = to,
+                from = from,
+                cc = cc,
+                subject = subject,
+                credentials = creds_file(file.path(PRIVATE_FOLDER_NAME, credentials_file))
+      )
+      
+    } else {
+      print(paste("The", x[["AREA_INF"]], "influence area hasn't any error"))
+    }
+    
+  })
+  
+}
+
+# ============ Annex II: New function ============
+
+# Create the backup and the error folder in the case that they do not exist
+
+createDirectory <- function(path_directory){
+  if(!file.exists(path_directory)){
+    dir.create(path_directory)
+    print("Se ha creado correctamente el directorio")
+  } else {
+    print("Ya existe el directorio")
+  }
+}
+

@@ -6,6 +6,8 @@
 *.Rproj
 *.xls
 *.xlsx
+script_test.R
+OUTLIERS.txt
 #all files in data directory
 /data/*
 /private/*
