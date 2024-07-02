@@ -74,22 +74,23 @@ PATH_BACKUP_FILE <- file.path(paste(PATH_FILES, "backup", sep = "/"))
 PATH_ERRORS <- file.path(PATH_FILES, "errors")
 PATH_PRIVATE_FILES <- file.path(getwd(), PRIVATE_FOLDER_NAME)
 
-#In order to create/check the existence of the backup and error directories
+# Create/check the existence of the backup and error directories
 
 DIR_BACKUP_ERRORS <- list(PATH_BACKUP_FILE, PATH_ERRORS)
 lapply(DIR_BACKUP_ERRORS, createDirectory)
 
-# path to store files as backup
+# Path to store files as backup
 PATH_BACKUP <- file.path(PATH_FILES, "backup")
 
+# Identifier for the directory where the working files are in
 IDENTIFIER <- createIdentifier(MONTH, YEAR, MONTH_AS_CHARACTER, suffix_multiple_months, suffix)
-# path to shared folder
+# Path to shared folder
 PATH_SHARE_LANDING_ERRORS <- file.path(PATH_SHARE_FOLDER, YEAR, IDENTIFIER)
 
-# list with the common fields used in all tables
+# List with the common fields used in all tables
 BASE_FIELDS <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_TIPO_MUE")
 
-# files to backup
+# Files to backup
 FILES_TO_BACKUP <- c("rim_pre_dump.R",
                      "rim_pre_dump_functions.R")
 

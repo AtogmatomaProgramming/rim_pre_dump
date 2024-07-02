@@ -1,0 +1,19 @@
+---
+output: blastula::blastula_email 
+---
+
+Hola.
+
+Este es el enlace al fichero de errores del mes de **`r MONTH_AS_CHARACTER`/`r YEAR`**
+del área de influencia **`r x[["AREA_INF"]]`** correspondiente a una categoría que posee 
+diferentes pesos de desembarque:
+
+`r x[["LINK"]]`
+
+`r x[["NOTES"]]`
+
+Importante revisar comparando con los datos presentes en el estadillo.
+
+Un saludo,
+
+SAP DataControlTeam.
