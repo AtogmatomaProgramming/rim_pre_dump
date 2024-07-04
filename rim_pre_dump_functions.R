@@ -632,7 +632,41 @@ errorsNoMixedSpeciesInSample <- function(df){
   err <- humanize(err)
 }
 
-# ============ Annex I: imported functions from rim_post_dump ============
+#' Check code: 1083
+#' Check variable with prescriptions data set. Use the metier_coherence data set
+#' from sapmuebase.
+#' @param df Dataframe where the variable to check is.
+#' @param variable Variable to check as character. Allowed variables:
+#' ESTRATO_RIM, COD_ORIGEN, COD_ARTE, METIER_DCF and CALADERO_DCF.
+#' @return dataframe with errors
+checkVariableWithMetierCoherence <- function(df, variable){
+
+  valid_variables = c("ESTRATO_RIM", "COD_ORIGEN", "COD_ARTE", "METIER_DCF",
+                      "CALADERO_DCF")
+
+  if (!(variable %in% valid_variables)) {
+    stop(paste("This function is not available for variable ", variable))
+  }
+
+  allowed <- sapmuebase::metier_coherence[,variable]
+
+  df <- df[!(df[[variable]] %in% allowed), ]
+
+
+  fields <- BASE_FIELDS
+
+  if (!(variable %in% BASE_FIELDS)) {
+    fields <- c(BASE_FIELDS, variable)
+  }
+
+  df <- df[, fields]
+
+  df <- unique(df)
+
+  return(df)
+
+}
+
 
 #' Create identifier of the month/months, with suffix. Used to create the filenames
 #' and folders.
@@ -647,51 +681,51 @@ createIdentifier <- function(month,
                              month_as_character,
                              suffix_multiple_months,
                              suffix){
-  
+
   suffix_complete <-  ""
-  
+
   if(suffix != ""){
     suffix_complete <- paste0("_", suffix)
   }
-  
+
   if (length(month) == 1 && month %in% seq(1:12)) {
     return(paste0(year, "_", month_as_character, suffix_complete))
   } else if (length(month) > 1 & all(month %in% seq(1:12))) {
     return(paste0(year, "_", suffix_multiple_months, suffix_complete))
   }
-  
+
 }
 
 
 #' Copy all the error files generated to a shared folder.
 #' Used to copy errors files generated to the shared folder
 copyFilesToFolder <- function (path_errors_from, path_errors_to){
-  
+
   # test if path_errors_from exists
   ifelse(!file.exists(path_errors_from), stop(paste("Folder", path_errors_from, "does not exists.")), FALSE)
-  
+
   # test if path_errors_from have files
   ifelse(length(list.files(path_errors_from))==0, stop(paste("Folder", path_errors_from, "doesn't have files.")), FALSE)
-  
+
   # if the share errors directory does not exists, create it:
   ifelse(!dir.exists(path_errors_to), dir.create(path_errors_to), FALSE)
-  
+
   # test if there are files with the same name in folder. In this case,
   # nothing is saved.
   files_list_to <- list.files(path_errors_to)
-  
+
   files_list_from <- list.files(path_errors_from)
-  
+
   if(any(files_list_from %in% files_list_to)){
     ae <- which(files_list_from %in% files_list_to)
     ae <- paste(files_list_from[ae], collapse = ", ")
     stop(paste("The file(s)", ae, "already exist(s). Nothing has been saved" ))
-    
+
   }
-  
+
   files_list_from <- file.path(path_errors_from, files_list_from)
   file.copy(from=files_list_from, to=path_errors_to)
-  
+
 }
 
 
@@ -724,28 +758,21 @@ copyFilesToFolder <- function (path_errors_from, path_errors_to){
 #' @require
 sendErrorsByEmail <- function(accesory_email_info, contacts, credentials_file,
                               identification_sampling){
-  
+
   apply(accesory_email_info, 1, function(x){
-    
+
     if(x[["LINK"]] != ""){
-      
+
       to <- contacts[contacts[["ROLE"]] == x[["AREA_INF"]] | contacts[["ROLE"]] == "sender", "EMAIL"]
       from <- contacts[contacts[["ROLE"]] == "sender", "EMAIL"]
       cc <- contacts[contacts[["ROLE"]] == "cc", "EMAIL"]
-      
-      # subject = paste0(YEAR,
-      #                  "_",
-      #                  sprintf("%02d", as.numeric(MONTH)),
-      #                  "_",
-      #                  x[["AREA_INF"]],
-      #                  " -- errores muestreos RIM")
-      
+
       subject = paste0(identification_sampling, " ",
                        x[["AREA_INF"]],
                        " -- errores muestreos RIM")
-      
+
       rmd_email <- render_email(EMAIL_TEMPLATE)
-      
+
       smtp_send(email = rmd_email,
                 to = to,
                 from = from,
@@ -753,25 +780,28 @@ sendErrorsByEmail <- function(accesory_email_info, contacts, credentials_file,
                 subject = subject,
                 credentials = creds_file(file.path(PRIVATE_FOLDER_NAME, credentials_file))
       )
-      
+
     } else {
       print(paste("The", x[["AREA_INF"]], "influence area hasn't any error"))
     }
-    
+
   })
-  
+
 }
 
-# ============ Annex II: New function ============
 
-# Create the backup and the error folder in the case that they do not exist
-
+#' Function to create the backup and the error folders in the case that they do
+#' not exist
+#' @param path_directory path for the directory that you need. In our case
+#' the backup's or the error's one.
+#' @returns a message which notifies if the directory
+#' has been created or just already exists.
 createDirectory <- function(path_directory){
   if(!file.exists(path_directory)){
     dir.create(path_directory)
-    print("Se ha creado correctamente el directorio")
+    print("Directory has been created correctly")
   } else {
-    print("Ya existe el directorio")
+    print("Directory just already exists")
   }
 }
 

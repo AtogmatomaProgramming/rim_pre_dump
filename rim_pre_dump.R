@@ -56,7 +56,7 @@ YEAR <- "2024"
 
 # Suffix to add to path. Use only in case MONTH is a vector of months. This
 # suffix will be added to the end of the path with a "_" as separation.
-suffix_multiple_months <- "annual_post_oab"
+suffix_multiple_months <- ""
 
 # Suffix to add at the end of the export file name. This suffix will be added to
 # the end of the file name with a "_" as separation.
@@ -74,22 +74,23 @@ PATH_BACKUP_FILE <- file.path(paste(PATH_FILES, "backup", sep = "/"))
 PATH_ERRORS <- file.path(PATH_FILES, "errors")
 PATH_PRIVATE_FILES <- file.path(getwd(), PRIVATE_FOLDER_NAME)
 
-#In order to create/check the existence of the backup and error directories
+# Create/check the existence of the backup and error directories
 
 DIR_BACKUP_ERRORS <- list(PATH_BACKUP_FILE, PATH_ERRORS)
 lapply(DIR_BACKUP_ERRORS, createDirectory)
 
-# path to store files as backup
+# Path to store files as backup
 PATH_BACKUP <- file.path(PATH_FILES, "backup")
 
+# Identifier for the directory where the working files are in
 IDENTIFIER <- createIdentifier(MONTH, YEAR, MONTH_AS_CHARACTER, suffix_multiple_months, suffix)
-# path to shared folder
+# Path to shared folder
 PATH_SHARE_LANDING_ERRORS <- file.path(PATH_SHARE_FOLDER, YEAR, IDENTIFIER)
 
-# list with the common fields used in all tables
+# List with the common fields used in all tables
 BASE_FIELDS <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_TIPO_MUE")
 
-# files to backup
+# Files to backup
 FILES_TO_BACKUP <- c("rim_pre_dump.R",
                      "rim_pre_dump_functions.R")
 
@@ -116,43 +117,6 @@ file_name <- unlist(strsplit(FILENAME, '.', fixed = T))
 file_name <- paste0(file_name[1], '_raw_imported.csv')
 
 exportCsvSAPMUEBASE(records, file_name, path = PATH_FILES)
-
-
-#' Check code:
-#' Check variable with prescriptions data set. Use the
-#' metier_coherence data set from sapmuebase.
-#' @param df Dataframe where the variable to check is.
-#' @param variable Variable to check as character. Allowed variables:
-#' ESTRATO_RIM, COD_ORIGEN, COD_ARTE, METIER_DCF and CALADERO_DCF.
-#' @return dataframe with errors
-checkVariableWithMetierCoherence <- function(df, variable){
-
-    valid_variables = c("ESTRATO_RIM", "COD_ORIGEN", "COD_ARTE", "METIER_DCF",
-                        "CALADERO_DCF")
-
-    if (!(variable %in% valid_variables)) {
-      stop(paste("This function is not available for variable ", variable))
-    }
-
-    allowed <- sapmuebase::metier_coherence[,variable]
-
-    df <- df[!(df[[variable]] %in% allowed), ]
-
-
-    fields <- BASE_FIELDS
-
-    if (!(variable %in% BASE_FIELDS)) {
-      fields <- c(BASE_FIELDS, variable)
-    }
-
-    df <- df[, fields]
-
-    df <- unique(df)
-
-    return(df)
-
-}
-
 
 
 # START CHECK ------------------------------------------------------------------
