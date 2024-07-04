@@ -632,7 +632,6 @@ errorsNoMixedSpeciesInSample <- function(df){
   err <- humanize(err)
 }
 
-# ============ Annex I: imported functions from rim_post_dump ============
 
 #' Create identifier of the month/months, with suffix. Used to create the filenames
 #' and folders.
@@ -762,16 +761,21 @@ sendErrorsByEmail <- function(accesory_email_info, contacts, credentials_file,
   
 }
 
-# ============ Annex II: New function ============
 
-# Create the backup and the error folder in the case that they do not exist
+
+#' Function in order to create the backup and the error folder in the case that they do not exist
+#' @param path_directory path for the directory that you need. In our case
+#' the backup's or the error's one.
+#' @returns a message which notifies if the directory
+#' has been created or just already exists. 
+
 
 createDirectory <- function(path_directory){
   if(!file.exists(path_directory)){
     dir.create(path_directory)
-    print("Se ha creado correctamente el directorio")
+    print("Directory has been created correctly")
   } else {
-    print("Ya existe el directorio")
+    print("Directory just already exists")
   }
 }
 
