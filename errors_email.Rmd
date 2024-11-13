@@ -5,15 +5,16 @@ output: blastula::blastula_email
 Hola.
 
 Este es el enlace al fichero de errores del mes de **`r MONTH_AS_CHARACTER`/`r YEAR`**
-del área de influencia **`r x[["AREA_INF"]]`** correspondiente a una categoría que posee 
-diferentes pesos de desembarque:
+del área de influencia **`r x[["AREA_INF"]]`** 
+
+IMPORTANTE: Este no es el fichero correspondiente a los errores que se envían después
+del volcado de datos en SIRENO. El mismo es otro que se realiza previamente al volcado,
+en donde se detectan para una especie mezcla (ej: Lophius spp), que dos o más categorías
+de la misma tienen para el peso desembarcado el mismo valor. Es clave revisar si efectivamente
+se registró así en el estadillo o es un error de volcado de datos. 
 
 `r x[["LINK"]]`
 
 `r x[["NOTES"]]`
 
-Importante revisar comparando con los datos presentes en el estadillo.
-
-Un saludo,
-
-SAP DataControlTeam.
+Un cordial saludo.
