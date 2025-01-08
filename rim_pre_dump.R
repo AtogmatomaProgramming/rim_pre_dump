@@ -1,15 +1,21 @@
 # Check the monthly data of onshore sampling and generate the files to dump it
 # in SIRENO database.
-
+#
+# The script import the files obtained from the subcontracted company, check
+# the data finding errors and fix them when is possible. Then, it generates the
+# files to dump in SIRENO database.
+#
 # INSTRUCTIONS -----------------------------------------------------------------
 # To use this script:
 # - The default folder organization is:
 #   - data
-#     - YYYY
-#       - YYYY_MM
-# Inside the YYYY_MM folder you should stored the files obtained from the
+#     - YYYY  (year with four digits)
+#       - YYYY_MM  (MM is the month with two digits: 01, 02, ..., 12)
+#          - backup (folder with the backup of the scripts, files used in the
+#                     process and final files)
+# Inside the YYYY_MM folder the files obtained from the
 # subcontracted company
-# - The script will generate a excell file ready to dumpo in SIRENO database. It
+# - The script will generate a excell file ready to dump in SIRENO database. It
 # will be stored in the same folder as before ./data/YYYY/YYYY_MM.
 # - In the same folder, a subfolder "errors" will be created with the errors
 # found in the data, and a subfolder "backup" with the backup of the scripts,
