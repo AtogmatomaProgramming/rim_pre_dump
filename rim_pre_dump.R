@@ -88,20 +88,28 @@ PATH_FILE <- getwd()
 MONTH_AS_CHARACTER <- sprintf("%02d", MONTH)
 LOG_FILE <- paste("LOG_", YEAR, "_", MONTH_AS_CHARACTER, ".csv", sep="")
 PATH_LOG_FILE <- file.path(paste(PATH_FILES, LOG_FILE, sep = "/"))
-PATH_BACKUP_FILE <- file.path(paste(PATH_FILES, "backup", sep = "/"))
-PATH_ERRORS <- file.path(PATH_FILES, "errors")
-PATH_PRIVATE_FILES <- file.path(getwd(), PRIVATE_FOLDER_NAME)
-
-# Create/check the existence of the backup and error directories
-
-DIR_BACKUP_ERRORS <- list(PATH_BACKUP_FILE, PATH_ERRORS)
-lapply(DIR_BACKUP_ERRORS, createDirectory)
 
 # Path to store files as backup
 PATH_BACKUP <- file.path(PATH_FILES, "backup")
+# Path where the backup files are stored
+PATH_BACKUP_FILE <- file.path(paste(PATH_FILES, "backup", sep = "/"))
+
+# Path where the error files are generated
+PATH_ERRORS <- file.path(PATH_FILES, "errors")
+
+# Path to store the private files (which are not shared in this repository)
+PATH_PRIVATE_FILES <- file.path(getwd(), PRIVATE_FOLDER_NAME)
+
+# Path of the files to import
+PATH_IMPORT <- file.path(PATH_FILES, "originals")
+
+# Create/check the existence of the mandatory folders
+FOLDERS <- list(PATH_BACKUP, PATH_ERRORS, PATH_IMPORT)
+lapply(FOLDERS, createDirectory)
 
 # Identifier for the directory where the working files are in
 IDENTIFIER <- createIdentifier(MONTH, YEAR, MONTH_AS_CHARACTER, suffix_multiple_months, suffix)
+
 # Path to shared folder
 PATH_SHARE_LANDING_ERRORS <- file.path(PATH_SHARE_FOLDER, YEAR, IDENTIFIER)
 
@@ -120,7 +128,7 @@ CONTACTS <- read.csv(file.path(PATH_PRIVATE_FILES, "contacts.csv"))
 
 
 # IMPORT FILES -----------------------------------------------------------------
-records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_FILES)
+records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_IMPORT)
 # Import sireno fleet
 # Firstly download the fleet file from Informes --> Listados --> Por proyecto
 # in SIRENO, and then:
@@ -134,7 +142,7 @@ fleet_sireno$COD.BARCO <- gsub("'", "", fleet_sireno$COD.BARCO)
 file_name <- unlist(strsplit(FILENAME, '.', fixed = T))
 file_name <- paste0(file_name[1], '_raw_imported.csv')
 
-exportCsvSAPMUEBASE(records, file_name, path = PATH_FILES)
+exportCsvSAPMUEBASE(records, file_name, path = PATH_IMPORT)
 
 
 # START CHECK ------------------------------------------------------------------
