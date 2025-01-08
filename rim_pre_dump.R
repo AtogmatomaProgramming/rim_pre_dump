@@ -1,11 +1,29 @@
-# IPDtoSIRENO
-# Script to check the monthly data dump from IPD database previous to SIRENO
-# upload.
-# Return csv files with errors detected
-# author: Marco A. Ámez Fernandez
-# email: ieo.marco.a.amez@gmail.com
-# files required: file from IPD with data to save in SIRENO and IPD_to_SIRENO.R
-# with all the functions used in this script
+# Check the monthly data of onshore sampling and generate the files to dump it
+# in SIRENO database.
+#
+# The script import the files obtained from the subcontracted company, check
+# the data finding errors and fix them when is possible. Then, it generates the
+# files to dump in SIRENO database.
+#
+# INSTRUCTIONS -----------------------------------------------------------------
+# To use this script:
+# - The default folder organization is:
+#   - data
+#     - YYYY  (year with four digits)
+#       - YYYY_MM  (MM is the month with two digits: 01, 02, ..., 12)
+#          - backup (folder with the backup of the scripts, files used in the
+#                     process and final files)
+# Inside the YYYY_MM folder the files obtained from the
+# subcontracted company
+# - The script will generate a excell file ready to dump in SIRENO database. It
+# will be stored in the same folder as before ./data/YYYY/YYYY_MM.
+# - In the same folder, a subfolder "errors" will be created with the errors
+# found in the data, and a subfolder "backup" with the backup of the scripts,
+# files used in the process and final files.
+# - Before to run the script, change variables in "YOU HAVE ONLY TO CHANGE THIS
+# VARIABLES" section.
+# - Run all the script
+
 
 # PACKAGES ---------------------------------------------------------------------
 
@@ -38,19 +56,19 @@ source('rim_pre_dump_functions.R')
 
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES: ----
 
-PATH_FILES <- file.path(getwd(), "data/2024/2024_04")
+PATH_FILES <- file.path(getwd(), "data/2024/2024_07")
 
 # Path to store in nextCloud the errors of "one category with different landing weights"
 
-PATH_SHARE_FOLDER <- "C:/Users/alberto.candelario/Desktop/nextCloud/SAP_RIM/RIM_data_review"
+PATH_SHARE_FOLDER <- "C:/Users/ieoma/NextCloud/SAP_RIM/RIM_data_review"
 
 # Name of the folder that is stored the items to send error mail
 
 PRIVATE_FOLDER_NAME <- "private"
 
-FILENAME <- "muestreos_4_ICES.txt"
+FILENAME <- "muestreos_7_ICES.txt"
 
-MONTH <- 4
+MONTH <- 7
 
 YEAR <- "2024"
 
@@ -106,7 +124,7 @@ records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_FILES)
 # Import sireno fleet
 # Firstly download the fleet file from Informes --> Listados --> Por proyecto
 # in SIRENO, and then:
-fleet_sireno <- read.csv(paste0(getwd(), "/private/", "IEOPROBARSIRENO.TXT"),
+fleet_sireno <- read.csv(paste0(getwd(), "/private/", "IEOPROBARMARCO.TXT"),
                          sep = ";", encoding = "latin1")
 fleet_sireno <- fleet_sireno[, c("COD.BARCO", "NOMBRE", "ESTADO")]
 fleet_sireno$COD.BARCO <- gsub("'", "", fleet_sireno$COD.BARCO)
@@ -137,7 +155,10 @@ check_mes <- check_month(records)
 
 check_estrato_rim <- checkVariableWithMetierCoherence(records, "ESTRATO_RIM")
 check_arte <- checkVariableWithMetierCoherence(records, "COD_ARTE")
+# There is a mistake to be fixed:
 check_arte <- humanize(check_arte)
+records[records$ESTRATO_RIM=="TRASMALL_CN" & records$COD_PUERTO=="0917", "COD_ARTE"] <- "204"
+
 check_origen <- checkVariableWithMetierCoherence(records, "COD_ORIGEN")
 
 
@@ -166,6 +187,8 @@ check_especies_mezcla_categoria <- errorsMixedSpeciesInCategory(records)
 # exportCsvSAPMUEBASE(check_especies_mezcla_categoria, "errors_mixed_sp_2023_07.csv")
 
 check_mixed_species_as_not_mixed<- errorsMixedSpeciesAsNotMixed(records)
+check_mixed_species_as_not_mixed <- humanize(check_mixed_species_as_not_mixed)
+records[records$COD_ESP_MUE=="10725", "COD_ESP_MUE"] <- "10726"
 # exportCsvSAPMUEBASE(check_not_mixed_species_in_sample, "check_not_mixed_species_in_sample.csv")
 
 check_categorias <- check_categories(records)
@@ -183,7 +206,7 @@ check_dni <- checkDni(records)
 # Sometimes, one category with various species of the category has various landing weights sampled.
 # This is not possible to save it in SIRENO, so with one_category_with_different_landing_weights(df)
 # function this mistakes are detected. This errors are separated by influence area and
-# must be send to the sups to fix it after save it in SIRENO
+# must be sent to the sups to fix it after save it in SIRENO
 check_one_category_with_different_landing_weights <- one_category_with_different_landing_weights(records)
 
 # Create files to send to sups:
@@ -251,9 +274,6 @@ not_registered_vessels <- merge(not_registered_vessels,
 registered <- c("ALTA DEFINITIVA", "G - A.P. POR NUEVA CONSTRUCCION", "H - A.P. POR REACTIVACION")
 not_registered_vessels <- not_registered_vessels[!not_registered_vessels$ESTADO %in% registered,]
 not_registered_vessels <- not_registered_vessels[!is.na(not_registered_vessels$ESTADO),]
-#Change the vessel "PARA LOS TRES" to "PARA LOS TRES I"
-levels(records$COD_BARCO) <- c(levels(records$COD_BARCO), "209343")
-records[records$COD_BARCO == "022302", "COD_BARCO"] <- "209343"
 
 
 # Check if there are vessels not filtered in ICES project. In this case a
