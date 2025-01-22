@@ -6,23 +6,22 @@
 # files to dump in SIRENO database.
 #
 # INSTRUCTIONS -----------------------------------------------------------------
-# To use this script:
-# - The default folder organization is:
+# The default folder organization is:
 #   - data
 #     - YYYY  (year with four digits)
 #       - YYYY_MM  (MM is the month with two digits: 01, 02, ..., 12)
+#          - originals (folder with the files obtained from the subcontracted
+#                       company)
 #          - backup (folder with the backup of the scripts, files used in the
 #                     process and final files)
-# Inside the YYYY_MM folder the files obtained from the
-# subcontracted company
-# - The script will generate a excel file ready to dump in SIRENO database. It
-# will be stored in the same folder as before ./data/YYYY/YYYY_MM.
-# - In the same folder, a subfolder "errors" will be created with the errors
-# found in the data, and a subfolder "backup" with the backup of the scripts,
-# files used in the process and final files.
-# - Before to run the script, change variables in "YOU HAVE ONLY TO CHANGE THIS
+#          - errors (folder with the errors found in the data)
+#          - finals (folder with the final files to dump in SIRENO database)
+#
+# The script will generate a excel file ready to dump in SIRENO database. It
+# will be stored in the folder ./data/YYYY/YYYY_MM/finals/.
+#
+# Before to run the script, change variables in "YOU HAVE ONLY TO CHANGE THIS
 # VARIABLES" section.
-# - Run all the script
 
 
 # PACKAGES ---------------------------------------------------------------------
@@ -56,14 +55,12 @@ source('rim_pre_dump_functions.R')
 
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES: ----
 
-PATH_FILES <- file.path(getwd(), "data/2024/2024_11")
+BASE_PATH <- file.path(getwd(), "data/2024/2024_11")
 
 # Path to store in nextCloud the errors of "one category with different landing weights"
-
 PATH_SHARE_FOLDER <- "C:/Users/ieoma/NextCloud/SAP_RIM/RIM_data_review"
 
 # Name of the folder that is stored the items to send error mail
-
 PRIVATE_FOLDER_NAME <- "private"
 
 FILENAME <- "muestreos_11_ICES.txt"
@@ -87,31 +84,30 @@ ERRORS <- list() #list with all errors found in data frames
 PATH_FILE <- getwd()
 MONTH_AS_CHARACTER <- sprintf("%02d", MONTH)
 LOG_FILE <- paste("LOG_", YEAR, "_", MONTH_AS_CHARACTER, ".csv", sep="")
-PATH_LOG_FILE <- file.path(paste(PATH_FILES, LOG_FILE, sep = "/"))
+PATH_LOG_FILE <- file.path(paste(BASE_PATH, LOG_FILE, sep = "/"))
 
-# Path to store files as backup
-PATH_BACKUP <- file.path(PATH_FILES, "backup")
-# Path where the backup files are stored
-PATH_BACKUP_FILE <- file.path(paste(PATH_FILES, "backup", sep = "/"))
 
-# Path where the error files are generated
-PATH_ERRORS <- file.path(PATH_FILES, "errors")
 
 # Path to store the private files (which are not shared in this repository)
-PATH_PRIVATE_FILES <- file.path(getwd(), PRIVATE_FOLDER_NAME)
-
+PATH_PRIVATE <- file.path(getwd(), PRIVATE_FOLDER_NAME)
 # Path of the files to import
-PATH_IMPORT <- file.path(PATH_FILES, "originals")
+PATH_IMPORT <- file.path(BASE_PATH, "originals")
+# Path where the final files are created
+PATH_EXPORT <- file.path(BASE_PATH, "finals")
+# Path where the error files are generated
+PATH_ERRORS <- file.path(BASE_PATH, "errors")
+# Path where the backup files are stored
+PATH_BACKUP <- file.path(BASE_PATH, "backup")
 
 # Create/check the existence of the mandatory folders
-FOLDERS <- list(PATH_BACKUP, PATH_ERRORS, PATH_IMPORT)
+FOLDERS <- list(PATH_IMPORT, PATH_EXPORT, PATH_ERRORS, PATH_BACKUP)
 lapply(FOLDERS, createDirectory)
 
 # Identifier for the directory where the working files are in
 IDENTIFIER <- createIdentifier(MONTH, YEAR, MONTH_AS_CHARACTER, suffix_multiple_months, suffix)
 
 # Path to shared folder
-PATH_SHARE_LANDING_ERRORS <- file.path(PATH_SHARE_FOLDER, YEAR, IDENTIFIER)
+PATH_SHARE_ERRORS <- file.path(PATH_SHARE_FOLDER, YEAR, IDENTIFIER)
 
 # List with the common fields used in all tables
 BASE_FIELDS <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_TIPO_MUE")
@@ -124,11 +120,12 @@ FILES_TO_BACKUP <- c("rim_pre_dump.R",
 EMAIL_TEMPLATE <- "errors_email.Rmd"
 
 # Read the list of contact to send errors
-CONTACTS <- read.csv(file.path(PATH_PRIVATE_FILES, "contacts.csv"))
+CONTACTS <- read.csv(file.path(PATH_PRIVATE, "contacts.csv"))
 
 
 # IMPORT FILES -----------------------------------------------------------------
 records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_IMPORT)
+
 # Import sireno fleet
 # Firstly download the fleet file from Informes --> Listados --> Por proyecto
 # in SIRENO, and then:
@@ -139,17 +136,16 @@ fleet_sireno$COD.BARCO <- gsub("'", "", fleet_sireno$COD.BARCO)
 
 
 # EXPORT FILE TO CSV -----------------------------------------------------------
-file_name <- unlist(strsplit(FILENAME, '.', fixed = T))
-file_name <- paste0(file_name[1], '_raw_imported.csv')
-
-exportCsvSAPMUEBASE(records, file_name, path = PATH_IMPORT)
+# file_name <- unlist(strsplit(FILENAME, '.', fixed = T))
+# file_name <- paste0(file_name[1], '_raw_imported.csv')
+#
+# exportCsvSAPMUEBASE(records, file_name, path = PATH_IMPORT)
 
 
 # START CHECK ------------------------------------------------------------------
 check_mes <- check_month(records)
 
-
-# Not longer use presctiptions
+# No longer use prescRiptions
 # check_estrato_rim <- checkVariableWithPrescriptions(records, "ESTRATO_RIM")
 # check_puerto <- checkVariableWithPrescriptions(records, "COD_PUERTO")
 # check_arte <- checkVariableWithPrescriptions(records, "COD_ARTE")
@@ -191,7 +187,7 @@ check_especies_mezcla_categoria <- errorsMixedSpeciesInCategory(records)
 
 check_mixed_species_as_not_mixed<- errorsMixedSpeciesAsNotMixed(records)
 check_mixed_species_as_not_mixed <- humanize(check_mixed_species_as_not_mixed)
-records[records$COD_ESP_MUE=="10725", "COD_ESP_MUE"] <- "10726"
+# records[records$COD_ESP_MUE=="10725", "COD_ESP_MUE"] <- "10726"
 # exportCsvSAPMUEBASE(check_not_mixed_species_in_sample, "check_not_mixed_species_in_sample.csv")
 
 check_categorias <- check_categories(records)
@@ -232,7 +228,7 @@ suf <- paste0("_",
 exportListToXlsx(errors_category, suffix = suf, path = PATH_ERRORS)
 
 # SAVE FILES TO SHARED FOLDER --------------------------------------------------
-copyFilesToFolder(PATH_ERRORS, PATH_SHARE_LANDING_ERRORS)
+copyFilesToFolder(PATH_ERRORS, PATH_SHARE_ERRORS)
 
 #To send the errors category for mail
 
@@ -301,7 +297,7 @@ which(!grepl("^[2,0]\\d{5}", records$COD_BARCO ))
 
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
-export_to_excel(records, PATH_FILES)
+export_to_excel(records, PATH_EXPORT)
 
 
 # BACKUP SCRIPTS AND RELATED FILES ----
