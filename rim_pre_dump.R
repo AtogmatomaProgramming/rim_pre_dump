@@ -15,7 +15,7 @@
 #                     process and final files)
 # Inside the YYYY_MM folder the files obtained from the
 # subcontracted company
-# - The script will generate a excell file ready to dump in SIRENO database. It
+# - The script will generate a excel file ready to dump in SIRENO database. It
 # will be stored in the same folder as before ./data/YYYY/YYYY_MM.
 # - In the same folder, a subfolder "errors" will be created with the errors
 # found in the data, and a subfolder "backup" with the backup of the scripts,
