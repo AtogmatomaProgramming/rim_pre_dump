@@ -1,79 +1,10 @@
-#function to read the operation code. If not exist, operation code = 0
-read_operation_code <- function(){
-  operation_code <- 0
-  if (file.exists(PATH_LOG_FILE)){
-    log_file <- read.csv(PATH_LOG_FILE)
-    index_operation_code <- as.numeric(length(log_file$OPERATION_CODE))
-    if (index_operation_code != 0){
-      operation_code <- log_file$OPERATION_CODE[index_operation_code]
-    }
-    rm(log_file)
-  } else {
-    operation_code <- 0
-  }
-  return(operation_code)
-}
-
-# ---- function to export tracking file ----------------------------------------
-# create the file with the operation code
-exportTrackingFile<- function(){
-  operation_code <- read_operation_code()
-  filename <- file_path_sans_ext(FILENAME)
-  filename <- paste(filename, operation_code, sep="_")
-  filename <- paste(PATH_FILES, filename, sep="/")
-  filename <- paste(filename,  ".csv", sep="")
-  write.csv(records, filename, quote = FALSE, row.names = FALSE)
-}
-
-# ---- function to create and/or update log file -------------------------------
-#' Create and/or update file
-#'
-#' This function create (or update, if it's already exists) a log file with the
-#' arguments sended.
-#' @param action: the realized action. For example "Remove" or "Change"
-#' @param df: dataframe
-#' @param variable: variable name (column)
-#' @param erroneus_data: the erroneus value to change
-#' @param correct_data: the correct value
-#' @param conditional_variables: a vector of characters with the name of the
-#' conditional variables
-#' @param conditions: a vector of characters with the conditional values, whith
-#' the same lenght that conditional_variables
-#'
-export_log_file <- function(action, variable, erroneus_data="", correct_data="", conditional_variable ="", condition =""){
-
-  #append data to file:
-  date <- format(as.POSIXlt(Sys.time()), "%d-%m-%Y %H:%M:%S")
-  #convert action to uppercase
-  action <- toupper(action)
-  #obtain the operation code
-  operation_code <- read_operation_code() + 1
-
-  # concat the conditional_variable and condition
-  conditional_variable_concat = paste(conditional_variable, collapse = '-')
-  condition_concat = paste(condition, collapse = '-')
-
-  to_append <- paste(action, variable, erroneus_data, correct_data, conditional_variable_concat, condition_concat, operation_code, date, sep = ",")
-
-  #check if the file exists. If not, create it.
-  if (!file.exists(PATH_LOG_FILE)){
-    header <- "ACTION,variable,ERRONEUS_DATA,CORRECT_DATA,CONDITIONAL_VARIABLE,CONDITION,OPERATION_CODE,DATE"
-    write(header, PATH_LOG_FILE)
-  }
-  #and write:
-  write(to_append, PATH_LOG_FILE, append = TRUE)
-}
-
-
-# ---- function to ckeck variables ---------------------------------------------
-#' Check variables
-#
 #' Check if the value of variables are consistent whit the SIRENO masters.
 #' It's only available for variables with a data source (master): ESTRATO_RIM, COD_PUERTO,
 #' COD_ORIGEN, COD_ARTE, COD_PROCEDENCIA and TIPO_MUESTREO
 #' @param variable: one of this variables: ESTRATO_RIM, COD_PUERTO, COD_ORIGEN,
 #' COD_ARTE or COD_PROCEDENCIA
-#' @return Return a dataframe with samples containing erroneus variables
+#' @param df: dataframe to check
+#' @return Return a dataframe with samples containing erroneous variables
 checkVariableWithMaster <- function (variable, df){
 
   valid_variables = c("ESTRATO_RIM","COD_PUERTO","COD_ORIGEN","COD_ARTE","PROCEDENCIA")
@@ -111,95 +42,12 @@ checkVariableWithMaster <- function (variable, df){
 }
 
 
-# ---- Change levels in a variable of a dataframe ------------------------------
-#' function to change levels in a variable of a dataframe. Add record to Log file
-#' and export file.
+#' Remove MT1 trips with foreign vessels.
 #' @param df: dataframe
-#' @param variable: variable name (column)
-#' @param erroneus_data: the erroneus value to change
-#' @param correct_data: the correct value
-#' @param conditional_variables: a vector of characters with the name of the conditional variables
-#' @param conditions: a vector of characters with the conditional values, whith the same lenght that conditional_variables
-#' @return dataframe corrected
-correct_levels_in_variable <- function(df, variable, erroneus_data, correct_data, conditional_variables, conditions) {
-
-  # check if the levels exists in df ...
-  levels_in_df <- levels(df[[variable]])
-  if (!(correct_data %in% levels_in_df)){ #if not ...
-    levels(df[[variable]]) <- c(levels(df[[variable]]), correct_data) # ... add it
-  }
-
-  if (missing(conditional_variables) && missing(conditions)) {
-
-    df[df[[variable]]==erroneus_data, variable] <- correct_data
-    # add to log file
-    export_log_file("change", variable, erroneus_data, correct_data)
-    #export file
-    exportTrackingFile()
-    #return
-    return(df)
-  } else if (!missing(df) && !missing(variable) && !missing(erroneus_data) && !missing(correct_data)){
-    # TODO: check if conditional_variables and conditiosn are lists??
-    data <- df
-
-    for (i in 1:length(conditional_variables)) {
-      data <- data[data[conditional_variables[i]]==conditions[i],]
-    }
-
-    index_row_to_change <- which(data[[variable]]==erroneus_data)
-    row_names<-row.names(data[index_row_to_change,])
-    row_to_change <- df[row_names,]
-
-    row_to_change[variable] <- correct_data
-    df[row.names(df) %in% row_names,] <- row_to_change
-
-
-    # add to log file
-
-    string_conditional_variables <- toString(conditional_variables)
-    string_conditional_variables <- gsub(",","",string_conditional_variables)
-
-    string_conditions <- toString(conditions)
-    string_conditions <- gsub(",","",string_conditions)
-
-    export_log_file("change variable", variable, erroneus_data, correct_data, string_conditional_variables, string_conditions)
-    #export file
-    exportTrackingFile()
-    # return
-
-    return(df)
-
-
-  } else {
-    stop("Some argument is missing.")
-  }
-}
-
-
-# function to remove trip. Add record to Log file and export file.
-# It's imperative this data to identify a trip:
-# FECHA, COD_TIPO_MUESTRA, COD_BARCO, COD_PUERTO, COD_ARTE, COD_ORIGEN and ESTRATO_RIM
-# df: dataframe
-# return: dataframe without the deleted trips
-remove_trip <- function(df, date, cod_type_sample, cod_ship, cod_port, cod_gear, cod_origin, rim_stratum){
-  df <- df[!(df["FECHA"]==date & df["COD_TIPO_MUE"] == cod_type_sample & df["COD_BARCO"] == cod_ship & df["COD_PUERTO"] == cod_port & df["COD_ARTE"] == cod_gear & df["COD_ORIGEN"] == cod_origin & df["ESTRATO_RIM"] == rim_stratum),]
-
-  # add to log file
-  error_text <- paste(date, cod_type_sample, cod_ship, cod_port, cod_gear, cod_origin, rim_stratum, sep=" ")
-  export_log_file("remove trip", "trip", error_text)
-  #export file
-  exportTrackingFile()
-  # return
-  return(df)
-}
-
-
-# function to remove MT1 trips with foreing vessels. Add record to Log file and export file.
-# df: dataframe
-# return: dataframe without the deleted trips
+#' @return Dataframe without the deleted trips
 remove_MT1_trips_foreing_vessels <- function(df){
 
-  #obtain MT1 trips with foreing vessels
+  #obtain MT1 trips with foreign vessels
   mt1_foreing <- df %>%
     filter( as.integer(as.character(COD_BARCO)) >= 800000 & COD_TIPO_MUE == "MT1A")
 
@@ -208,33 +56,17 @@ remove_MT1_trips_foreing_vessels <- function(df){
     #ATENTION to the ! and ():
     filter( !(as.integer(as.character(COD_BARCO)) >= 800000 & COD_TIPO_MUE == "MT1A"))
 
-
-  # add to log file
-  # concat all the variables of the dataframe
-  r <- apply(mt1_foreing, 1, function(x){
-    c <- paste0(x, collapse = " ")
-    return(c)
-  }
-  )
-  # apply the export_log_file to every element of the list
-  lapply (r, function(x){
-    export_log_file("remove trip", "trip", x)
-  }
-  )
-
-  #export file
-  exportTrackingFile()
   # return
   return(df)
 }
 
 
-# TODO: remove this function, don't have any sense because in the import proccess
-# the month is selected
-# function to check the month: Check if all the data in the dataframe belongs to
-# the same month, allocated in MONTH variable
-# df: dataframe to check
-# return a dataframe with the samples of incorrect month
+#' TODO: remove this function, don't have any sense because in the import process
+#' the month is selected
+#' Check if all the data in the dataframe belongs to the same month, allocated in
+#' MONTH variable
+#' @param df: Dataframe to check
+#' @return Dataframe with the samples of incorrect month
 check_month <- function(df){
   df$months <- sapply (as.Date(df[["FECHA"]], "%d/%m/%Y"), function(x){format(x, "%m")})
   erroneus_months <- as.data.frame(unique(df$months))
@@ -246,11 +78,10 @@ check_month <- function(df){
 }
 
 
-# function to check the type of sample.
-# df: dataframe to check
-# return samples with:
-# - ESTRATEGIA != to "CONCURRENTE EN LONJA"
-# - except VORACERA_GC which must be "EN BASE A ESPECIE"
+#' Check the type of sample.
+#' @param df: dataframe to check
+#' @return Dataframe with samples which ESTRATEGIA != to "CONCURRENTE EN LONJA",
+#' except VORACERA_GC which must be "EN BASE A ESPECIE"
 check_strategy <- function(df){
 
   errors_not_voracera <- records[ which(records[["ESTRATO_RIM"]] != "VORACERA_GC"
@@ -280,9 +111,9 @@ check_strategy <- function(df){
 }
 
 
-# function to search duplicate samples by type of sample (between MT1 and MT2)
-# df: dataframe where find duplicate samples
-# returns a dataframe with duplicate samples
+#' Search duplicate samples by type of sample (between MT1 and MT2)
+#' @param df: dataframe where find duplicate samples
+#' @return Dataframe with duplicate samples
 check_duplicates_type_sample <- function(df){
   mt1 <- df[df["COD_TIPO_MUE"]=="MT1A",c("COD_PUERTO","FECHA","COD_BARCO")]
   mt1 <- unique(mt1)
@@ -294,10 +125,10 @@ check_duplicates_type_sample <- function(df){
   return(duplicated)
 }
 
-# function to search false mt2 samples: samples with COD_TIPO_MUE as MT2A and
-# without any lenght
-# df: dataframe
-# return: dataframe with erroneus samples
+#' Search false mt2 samples: samples with COD_TIPO_MUE as MT2A and without any
+#' length.
+#' @param df: dataframe to check.
+#' @return Dataframe with erroneous samples
 check_false_mt2 <- function(df){
   dataframe <- df
   mt2_errors <- dataframe %>%
@@ -309,10 +140,9 @@ check_false_mt2 <- function(df){
   return(mt2_errors)
 }
 
-# function to search false mt1 samples: samples with COD_TIPO_MUE as MT1A and
-# lenghts
-# df: dataframe
-# return: dataframe with erroneus samples
+#' Search false mt1 samples: samples with COD_TIPO_MUE as MT1A and lengths
+#' @param df: dataframe to check.
+#' @return Dataframe with erroneous samples
 check_false_mt1 <- function(df){
   dataframe <- df
   mt1_errors <- dataframe %>%
@@ -324,10 +154,10 @@ check_false_mt1 <- function(df){
   return(mt1_errors)
 }
 
-# function to search foreing ships
-# the BAR_COD code in the foreing ships begins with an 8 and continue with 5 digits
-# df: dataframe
-# return: dataframe with foreing ships and COD_TIPO_MUE
+#' Search foreign ships
+#' The BAR_COD code in the foreign ships begins with an 8 followed by 5 digits.
+#' @param df: dataframe
+#' @return Dataframe with foreign ships and COD_TIPO_MUE
 check_foreing_ship <- function(df){
   dataframe <- df
   dataframe$COD_BARCO <- as.character(dataframe$COD_BARCO)
@@ -364,18 +194,19 @@ check_foreing_ship <- function(df){
 # colnames(ships) <- "COD_BARCO"
 # ships_sireno <- merge(x=ships, y=maestro_flota_sireno, by.x = "COD_BARCO", by.y = "BARCOD", all.x = TRUE)
 
-# function to check mixed species saved as non mixed species: in COD_ESP_MUE
-# there are codes from mixed species
-# df: dataframe
-# return a dataframe with the samples with species saved as non mixed species
+#' Check mixed species saved as non mixed species: in COD_ESP_MUE
+#' there are codes from mixed species
+#' @param df: dataframe to check
+#' @return  Dataframe with the samples with species saved as non mixed species.
 errorsMixedSpeciesAsNotMixed <- function(df){
   non_mixed <- merge(x=df, y=especies_mezcla["COD_ESP_CAT"], by.x = "COD_ESP_MUE", by.y = "COD_ESP_CAT")
   return(non_mixed)
 }
 
-# function to check if the categories in the IPD file are in the categories master of the SIRENO
-# df: data frame
-# return: data frame of samples with erroneous categories
+#' Check if the categories in the IPD file are in the categories master of the
+#' SIRENO
+#' @param df: dataframe to check
+#' @return  Data frame of samples with erroneous categories
 check_categories <- function(df){
 
   categorias[["CONTROL"]] <- "OK"
@@ -391,11 +222,9 @@ check_categories <- function(df){
   return (errors)
 }
 
-# ---- function to check if any length has the EJEM_MEDIDOS as NA
-#' function to check if any length has the EJEM_MEDIDOS as NA.
+#' Check if any length has the EJEM_MEDIDOS as NA.
 #' @param df: data frame to check
 #' @return data frame with errors
-
 check_measured_individuals_na <- function(df){
   errors <- df %>%
     filter(is.na(EJEM_MEDIDOS))
@@ -403,9 +232,7 @@ check_measured_individuals_na <- function(df){
   return (errors)
 }
 
-# ---- function to check if one category has two or more different P_MUE_DES ---
-#
-#' function to check if one category has two or more different P_MUE_DES.
+#' Check if one category has two or more different P_MUE_DES.
 #' Mostly, this cases correspond to mixed species or sexed species, but in other
 #' cases this can be an error in the keyed process by IPD:
 #' - in some mixed species, one category (0901) contains two 'species
@@ -441,18 +268,21 @@ one_category_with_different_landing_weights <- function(df){
 
 }
 
-# function to export file to excel.
-# if this error is returned:
-#    Error: zipping up workbook failed. Please make sure Rtools is installed or a zip application is available to R.
-#    Try installr::install.rtools() on Windows.
-# run:Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
-# source: https://github.com/awalker89/openxlsx/issues/111
+#' Export file to excel.
+#' @param df: data frame to export
+#' @path: path to save the file
+#' @note If this error is returned:
+#'    Error: zipping up workbook failed. Please make sure Rtools is installed or a zip application is available to R.
+#'    Try installr::install.rtools() on Windows.
+#' run:Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
+#' source: https://github.com/awalker89/openxlsx/issues/111
+#' @return Excel file in the path defined in the GLOBAL VARIABLES section
 #
-export_to_excel <- function(df){
+export_to_excel <- function(df, path){
   month_in_spanish <- c("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre")
 
   filename = paste("MUESTREOS_IPD_", month_in_spanish[as.integer(MONTH_AS_CHARACTER)], "_", YEAR, "_ICES.xlsx", sep="")
-  filepath = paste(PATH_FILES, filename, sep = "/")
+  filepath = paste(path, filename, sep = "/")
 
   colnames(df) <- c("FECHA","PUERTO","BUQUE","ARTE","ORIGEN","METIER","PROYECTO",
                     "TIPO MUESTREO","NRECHAZOS","NBARCOS MUESTREADOS","CUADRICULA",
@@ -467,25 +297,17 @@ export_to_excel <- function(df){
 }
 
 
-# ---- function to fix MEDIDA variable -----------------------------------------
-#
 #' Change the content of variable MEDIDA to "T" ("Tallas", lenghts).
-#'
-#' All the data are lengthts samples so this variable can't be "P" ("Pesos", weights)
+#' All the data are lengths samples so this variable can't be "P" ("Pesos", weights)
 #' or empty.
-#
 #' @param df: data frame to modify
 #' @return Return a data frame with the MEDIDA variable fixed
-#'
 fix_medida_variable <- function (df) {
 
   if ("MEDIDA" %in% colnames(df)){
     df[["MEDIDA"]] <- "T"
 
-    export_log_file("change", "MEDIDA", "all rows", "T")
-
     return(df)
-
 
   } else {
     stop(paste0("TALL.PESO doesn't exists in ", substitute(df)))
@@ -528,14 +350,10 @@ checkVariableWithPrescriptions <- function(df, variable) {
 }
 
 #' Check code: 1067
-# Check if the code type sample is different of MT1A or MT2A -------------------
-#
 #' Check if the code type sample is different of MT1A or MT2A
-#'
 #' @return dataframe with errors
-#'
-checkCodeTypeSample <- function(){
-  errors <- records[!(records[["COD_TIPO_MUE"]] %in% c("MT1A", "MT2A")), ]
+checkCodeTypeSample <- function(df){
+  errors <- df[!(df[["COD_TIPO_MUE"]] %in% c("MT1A", "MT2A")), ]
   if(nrow(errors) > 0){
     return(errors)
   } else {
@@ -545,7 +363,7 @@ checkCodeTypeSample <- function(){
 
 #' Check code: 1068
 #' Check if the variables ESTRATO_RIM, COD_PUERTO, COD_ORIGEN and
-#' COD_ARTE are coherent with MT2 rim prescriptions. ---------------------------
+#' COD_ARTE are coherent with MT2 rim prescriptions.
 #' @return dataframe with errors.
 coherencePrescriptionsRimMt2 <- function(df){
 
@@ -790,8 +608,7 @@ sendErrorsByEmail <- function(accesory_email_info, contacts, credentials_file,
 }
 
 
-#' Function to create the backup and the error folders in the case that they do
-#' not exist
+#' Create the backup and the error folders in the case that they do not exist
 #' @param path_directory path for the directory that you need. In our case
 #' the backup's or the error's one.
 #' @returns a message which notifies if the directory

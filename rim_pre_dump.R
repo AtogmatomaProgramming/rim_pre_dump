@@ -56,7 +56,7 @@ source('rim_pre_dump_functions.R')
 
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES: ----
 
-PATH_FILES <- file.path(getwd(), "data/2024/2024_07")
+PATH_FILES <- file.path(getwd(), "data/2024/2024_11")
 
 # Path to store in nextCloud the errors of "one category with different landing weights"
 
@@ -66,9 +66,9 @@ PATH_SHARE_FOLDER <- "C:/Users/ieoma/NextCloud/SAP_RIM/RIM_data_review"
 
 PRIVATE_FOLDER_NAME <- "private"
 
-FILENAME <- "muestreos_7_ICES.txt"
+FILENAME <- "muestreos_11_ICES.txt"
 
-MONTH <- 7
+MONTH <- 11
 
 YEAR <- "2024"
 
@@ -146,11 +146,6 @@ exportCsvSAPMUEBASE(records, file_name, path = PATH_IMPORT)
 
 
 # START CHECK ------------------------------------------------------------------
-# if any error is detected use function:
-# correct_levels_in_variable(df, variable, erroneus_data, correct_data, conditional_variables, conditions)
-# to fix it. This function return the 'df' already corrected, so you have to assign
-# the data returned to the records dataframe: records <- correct_level_in_variable.
-
 check_mes <- check_month(records)
 
 
@@ -165,13 +160,13 @@ check_estrato_rim <- checkVariableWithMetierCoherence(records, "ESTRATO_RIM")
 check_arte <- checkVariableWithMetierCoherence(records, "COD_ARTE")
 # There is a mistake to be fixed:
 check_arte <- humanize(check_arte)
-records[records$ESTRATO_RIM=="TRASMALL_CN" & records$COD_PUERTO=="0917", "COD_ARTE"] <- "204"
+records[records$ESTRATO_RIM=="PALANGRE_CN" & records$COD_PUERTO=="0913", "COD_ARTE"] <- "302"
 
 check_origen <- checkVariableWithMetierCoherence(records, "COD_ORIGEN")
 
 
 # TODO: ¡¡¡¡¡!!!!! create checkMetierCoherence function!!
-records[records$ESTRATO_RIM=="CERCO_GC" & records$COD_ORIGEN=="010", "COD_ORIGEN"] <- "011"
+# records[records$ESTRATO_RIM=="CERCO_GC" & records$COD_ORIGEN=="010", "COD_ORIGEN"] <- "011"
 
 check_procedencia <- checkVariableWithMaster("PROCEDENCIA", records)
 
@@ -306,7 +301,7 @@ which(!grepl("^[2,0]\\d{5}", records$COD_BARCO ))
 
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
-export_to_excel(records)
+export_to_excel(records, PATH_FILES)
 
 
 # BACKUP SCRIPTS AND RELATED FILES ----
