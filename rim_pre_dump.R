@@ -15,7 +15,7 @@
 #                     process and final files)
 # Inside the YYYY_MM folder the files obtained from the
 # subcontracted company
-# - The script will generate a excell file ready to dump in SIRENO database. It
+# - The script will generate a excel file ready to dump in SIRENO database. It
 # will be stored in the same folder as before ./data/YYYY/YYYY_MM.
 # - In the same folder, a subfolder "errors" will be created with the errors
 # found in the data, and a subfolder "backup" with the backup of the scripts,
@@ -56,7 +56,7 @@ source('rim_pre_dump_functions.R')
 
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES: ----
 
-PATH_FILES <- file.path(getwd(), "data/2024/2024_07")
+PATH_FILES <- file.path(getwd(), "data/2024/2024_11")
 
 # Path to store in nextCloud the errors of "one category with different landing weights"
 
@@ -66,9 +66,9 @@ PATH_SHARE_FOLDER <- "C:/Users/ieoma/NextCloud/SAP_RIM/RIM_data_review"
 
 PRIVATE_FOLDER_NAME <- "private"
 
-FILENAME <- "muestreos_7_ICES.txt"
+FILENAME <- "muestreos_11_ICES.txt"
 
-MONTH <- 7
+MONTH <- 11
 
 YEAR <- "2024"
 
@@ -88,20 +88,28 @@ PATH_FILE <- getwd()
 MONTH_AS_CHARACTER <- sprintf("%02d", MONTH)
 LOG_FILE <- paste("LOG_", YEAR, "_", MONTH_AS_CHARACTER, ".csv", sep="")
 PATH_LOG_FILE <- file.path(paste(PATH_FILES, LOG_FILE, sep = "/"))
-PATH_BACKUP_FILE <- file.path(paste(PATH_FILES, "backup", sep = "/"))
-PATH_ERRORS <- file.path(PATH_FILES, "errors")
-PATH_PRIVATE_FILES <- file.path(getwd(), PRIVATE_FOLDER_NAME)
-
-# Create/check the existence of the backup and error directories
-
-DIR_BACKUP_ERRORS <- list(PATH_BACKUP_FILE, PATH_ERRORS)
-lapply(DIR_BACKUP_ERRORS, createDirectory)
 
 # Path to store files as backup
 PATH_BACKUP <- file.path(PATH_FILES, "backup")
+# Path where the backup files are stored
+PATH_BACKUP_FILE <- file.path(paste(PATH_FILES, "backup", sep = "/"))
+
+# Path where the error files are generated
+PATH_ERRORS <- file.path(PATH_FILES, "errors")
+
+# Path to store the private files (which are not shared in this repository)
+PATH_PRIVATE_FILES <- file.path(getwd(), PRIVATE_FOLDER_NAME)
+
+# Path of the files to import
+PATH_IMPORT <- file.path(PATH_FILES, "originals")
+
+# Create/check the existence of the mandatory folders
+FOLDERS <- list(PATH_BACKUP, PATH_ERRORS, PATH_IMPORT)
+lapply(FOLDERS, createDirectory)
 
 # Identifier for the directory where the working files are in
 IDENTIFIER <- createIdentifier(MONTH, YEAR, MONTH_AS_CHARACTER, suffix_multiple_months, suffix)
+
 # Path to shared folder
 PATH_SHARE_LANDING_ERRORS <- file.path(PATH_SHARE_FOLDER, YEAR, IDENTIFIER)
 
@@ -120,7 +128,7 @@ CONTACTS <- read.csv(file.path(PATH_PRIVATE_FILES, "contacts.csv"))
 
 
 # IMPORT FILES -----------------------------------------------------------------
-records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_FILES)
+records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_IMPORT)
 # Import sireno fleet
 # Firstly download the fleet file from Informes --> Listados --> Por proyecto
 # in SIRENO, and then:
@@ -134,15 +142,10 @@ fleet_sireno$COD.BARCO <- gsub("'", "", fleet_sireno$COD.BARCO)
 file_name <- unlist(strsplit(FILENAME, '.', fixed = T))
 file_name <- paste0(file_name[1], '_raw_imported.csv')
 
-exportCsvSAPMUEBASE(records, file_name, path = PATH_FILES)
+exportCsvSAPMUEBASE(records, file_name, path = PATH_IMPORT)
 
 
 # START CHECK ------------------------------------------------------------------
-# if any error is detected use function:
-# correct_levels_in_variable(df, variable, erroneus_data, correct_data, conditional_variables, conditions)
-# to fix it. This function return the 'df' already corrected, so you have to assign
-# the data returned to the records dataframe: records <- correct_level_in_variable.
-
 check_mes <- check_month(records)
 
 
@@ -157,13 +160,13 @@ check_estrato_rim <- checkVariableWithMetierCoherence(records, "ESTRATO_RIM")
 check_arte <- checkVariableWithMetierCoherence(records, "COD_ARTE")
 # There is a mistake to be fixed:
 check_arte <- humanize(check_arte)
-records[records$ESTRATO_RIM=="TRASMALL_CN" & records$COD_PUERTO=="0917", "COD_ARTE"] <- "204"
+records[records$ESTRATO_RIM=="PALANGRE_CN" & records$COD_PUERTO=="0913", "COD_ARTE"] <- "302"
 
 check_origen <- checkVariableWithMetierCoherence(records, "COD_ORIGEN")
 
 
 # TODO: ¡¡¡¡¡!!!!! create checkMetierCoherence function!!
-records[records$ESTRATO_RIM=="CERCO_GC" & records$COD_ORIGEN=="010", "COD_ORIGEN"] <- "011"
+# records[records$ESTRATO_RIM=="CERCO_GC" & records$COD_ORIGEN=="010", "COD_ORIGEN"] <- "011"
 
 check_procedencia <- checkVariableWithMaster("PROCEDENCIA", records)
 
@@ -298,7 +301,7 @@ which(!grepl("^[2,0]\\d{5}", records$COD_BARCO ))
 
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
-export_to_excel(records)
+export_to_excel(records, PATH_FILES)
 
 
 # BACKUP SCRIPTS AND RELATED FILES ----
