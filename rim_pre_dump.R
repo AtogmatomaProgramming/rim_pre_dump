@@ -55,7 +55,7 @@ source('rim_pre_dump_functions.R')
 
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES: ----
 
-BASE_PATH <- file.path(getwd(), "data/2024/2024_11")
+BASE_PATH <- file.path(getwd(), "data/2024/2024_12")
 
 # Path to store in nextCloud the errors of "one category with different landing weights"
 PATH_SHARE_FOLDER <- "C:/Users/ieoma/NextCloud/SAP_RIM/RIM_data_review"
@@ -63,9 +63,9 @@ PATH_SHARE_FOLDER <- "C:/Users/ieoma/NextCloud/SAP_RIM/RIM_data_review"
 # Name of the folder that is stored the items to send error mail
 PRIVATE_FOLDER_NAME <- "private"
 
-FILENAME <- "muestreos_11_ICES.txt"
+FILENAME <- "muestreos_12_ICES.txt"
 
-MONTH <- 11
+MONTH <- 12
 
 YEAR <- "2024"
 
@@ -156,7 +156,7 @@ check_estrato_rim <- checkVariableWithMetierCoherence(records, "ESTRATO_RIM")
 check_arte <- checkVariableWithMetierCoherence(records, "COD_ARTE")
 # There is a mistake to be fixed:
 check_arte <- humanize(check_arte)
-records[records$ESTRATO_RIM=="PALANGRE_CN" & records$COD_PUERTO=="0913", "COD_ARTE"] <- "302"
+# records[records$ESTRATO_RIM=="PALANGRE_CN" & records$COD_PUERTO=="0913", "COD_ARTE"] <- "302"
 
 check_origen <- checkVariableWithMetierCoherence(records, "COD_ORIGEN")
 
@@ -242,10 +242,10 @@ accesory_email_info <- data.frame(
                "GC",
                "GN",
                "GS"),
-  LINK = c("",
-           "https://saco.csic.es/index.php/f/213076532",
-           "https://saco.csic.es/index.php/f/213076535",
-           ""),
+  LINK = c("https://saco.csic.es/index.php/f/333278957",
+           "",
+           "",
+           "https://saco.csic.es/index.php/f/333278965"),
   NOTES = c("",
             "",
             "",

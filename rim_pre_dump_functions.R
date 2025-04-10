@@ -587,7 +587,7 @@ sendErrorsByEmail <- function(accesory_email_info, contacts, credentials_file,
 
       subject = paste0(identification_sampling, " ",
                        x[["AREA_INF"]],
-                       " -- errores muestreos RIM")
+                       " -- errores muestreos RIM previo volcado")
 
       rmd_email <- render_email(EMAIL_TEMPLATE)
 
