@@ -236,11 +236,11 @@ check_measured_individuals_na <- function(df){
 #' Mostly, this cases correspond to mixed species or sexed species, but in other
 #' cases this can be an error in the keyed process by IPD:
 #' - in some mixed species, one category (0901) contains two 'species
-#' of the category'. For example Lophis piscatorius and L. budegassa, everyone
-#' with its own 'landing weight'. In the saved process in SIRENO, only the first of the
-#' 'landing weight' is used and the records with the second 'landing weight' are
-#' discarded. The correct way to introduce this samples in SIRENO is with
-#' the specie of the second 'landing weight' keyed like another category (0902)
+#' of the category'. For example Lophis piscatorius and L. budegassa. Ideally
+#' evey species of the category must have the same 'landing weight' but in some
+#' cases (maybe for keyed error) that weights are different. In the dump process
+#' in SIRENO, only the first of this 'landing weight' is used and the records
+#' with the second 'landing weight' are discarded.
 #'
 #' With this function we obtain all the categories with two or more different
 #' 'landing weight'.
