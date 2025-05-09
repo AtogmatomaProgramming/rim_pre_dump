@@ -52,22 +52,23 @@ library(openxlsx)
 # All the functions required in this script are located in
 # revision_volcado_functions.R file.
 source('rim_pre_dump_functions.R')
+source('R/rim_pre_dump_functions_final.R')
 
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES: ----
 
-BASE_PATH <- file.path(getwd(), "data/2024/2024_12")
+BASE_PATH <- file.path(getwd(), "data/2025/2025_03")
 
 # Path to store in nextCloud the errors of "one category with different landing weights"
-PATH_SHARE_FOLDER <- "C:/Users/ieoma/NextCloud/SAP_RIM/RIM_data_review"
+PATH_SHARE_FOLDER <- "C:/Users/alberto.candelario.ST/Documents/local_nextCloud/SAP_RIM/RIM_data_review"
 
 # Name of the folder that is stored the items to send error mail
 PRIVATE_FOLDER_NAME <- "private"
 
-FILENAME <- "muestreos_12_ICES.txt"
+FILENAME <- "muestreos_3_ICES.txt"
 
-MONTH <- 12
+MONTH <- 3
 
-YEAR <- "2024"
+YEAR <- "2025"
 
 # Suffix to add to path. Use only in case MONTH is a vector of months. This
 # suffix will be added to the end of the path with a "_" as separation.
@@ -129,7 +130,7 @@ records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_IMPORT)
 # Import sireno fleet
 # Firstly download the fleet file from Informes --> Listados --> Por proyecto
 # in SIRENO, and then:
-fleet_sireno <- read.csv(paste0(getwd(), "/private/", "IEOPROBARMARCO.TXT"),
+fleet_sireno <- read.csv(paste0(getwd(), "/private/", "IEOPROBARACANDELARIO.TXT"),
                          sep = ";", encoding = "latin1")
 fleet_sireno <- fleet_sireno[, c("COD.BARCO", "NOMBRE", "ESTADO")]
 fleet_sireno$COD.BARCO <- gsub("'", "", fleet_sireno$COD.BARCO)
@@ -155,16 +156,18 @@ check_mes <- check_month(records)
 check_estrato_rim <- checkVariableWithMetierCoherence(records, "ESTRATO_RIM")
 check_arte <- checkVariableWithMetierCoherence(records, "COD_ARTE")
 # There is a mistake to be fixed:
+
 check_arte <- humanize(check_arte)
-# records[records$ESTRATO_RIM=="PALANGRE_CN" & records$COD_PUERTO=="0913", "COD_ARTE"] <- "302"
+# Use in case: records[records$ESTRATO_RIM=="PALANGRE_CN" & records$COD_PUERTO=="0913", "COD_ARTE"] <- "302"
 
 check_origen <- checkVariableWithMetierCoherence(records, "COD_ORIGEN")
 
 
-# TODO: ¡¡¡¡¡!!!!! create checkMetierCoherence function!!
-# records[records$ESTRATO_RIM=="CERCO_GC" & records$COD_ORIGEN=="010", "COD_ORIGEN"] <- "011"
-
 check_procedencia <- checkVariableWithMaster("PROCEDENCIA", records)
+
+check_metier_coherence <- checkMetierCoherence(records)
+
+# Use in case: records[records$ESTRATO_RIM=="CERCO_GC" & records$COD_ORIGEN=="010", "COD_ORIGEN"] <- "011"
 
 check_estrategia <- check_strategy(records)
 
@@ -242,10 +245,10 @@ accesory_email_info <- data.frame(
                "GC",
                "GN",
                "GS"),
-  LINK = c("https://saco.csic.es/index.php/f/333278957",
+  LINK = c("https://saco.csic.es/index.php/f/458150678",
+           "https://saco.csic.es/index.php/f/458150677",
            "",
-           "",
-           "https://saco.csic.es/index.php/f/333278965"),
+           "https://saco.csic.es/index.php/f/458150679"),
   NOTES = c("",
             "",
             "",
