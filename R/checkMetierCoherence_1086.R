@@ -9,8 +9,12 @@ checkMetierCoherence <- function(df){
   
   # Select work columns
   
-  df <- df[, c("FECHA", "COD_PUERTO", "COD_BARCO","COD_ARTE",
-                         "COD_ORIGEN", "ESTRATO_RIM")]
+  df <- df[ , c("FECHA", 
+                "COD_PUERTO", 
+                "COD_BARCO", 
+                "COD_ARTE", 
+                "COD_ORIGEN", 
+                "ESTRATO_RIM")]
   
   # Import master dataset: metier_coherence
   
@@ -28,7 +32,7 @@ checkMetierCoherence <- function(df){
               metier_coherence_master,
               all.x = TRUE)
   
-  df <- records[is.na(df$TEST), ] 
+  df <- df[is.na(df$TEST), ] 
   
   df <- unique(df)
   

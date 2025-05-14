@@ -56,7 +56,7 @@ source('R/rim_pre_dump_functions_final.R')
 
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES: ----
 
-BASE_PATH <- file.path(getwd(), "data/2025/2025_03")
+BASE_PATH <- file.path(getwd(), "data/2025/2025_02")
 
 # Path to store in nextCloud the errors of "one category with different landing weights"
 PATH_SHARE_FOLDER <- "C:/Users/alberto.candelario.ST/Documents/local_nextCloud/SAP_RIM/RIM_data_review"
@@ -64,9 +64,9 @@ PATH_SHARE_FOLDER <- "C:/Users/alberto.candelario.ST/Documents/local_nextCloud/S
 # Name of the folder that is stored the items to send error mail
 PRIVATE_FOLDER_NAME <- "private"
 
-FILENAME <- "muestreos_3_ICES.txt"
+FILENAME <- "muestreos_2_ICES.txt"
 
-MONTH <- 3
+MONTH <- 2
 
 YEAR <- "2025"
 
@@ -135,7 +135,6 @@ fleet_sireno <- read.csv(paste0(getwd(), "/private/", "IEOPROBARACANDELARIO.TXT"
 fleet_sireno <- fleet_sireno[, c("COD.BARCO", "NOMBRE", "ESTADO")]
 fleet_sireno$COD.BARCO <- gsub("'", "", fleet_sireno$COD.BARCO)
 
-
 # EXPORT FILE TO CSV -----------------------------------------------------------
 # file_name <- unlist(strsplit(FILENAME, '.', fixed = T))
 # file_name <- paste0(file_name[1], '_raw_imported.csv')
@@ -158,16 +157,18 @@ check_arte <- checkVariableWithMetierCoherence(records, "COD_ARTE")
 # There is a mistake to be fixed:
 
 check_arte <- humanize(check_arte)
-# Use in case: records[records$ESTRATO_RIM=="PALANGRE_CN" & records$COD_PUERTO=="0913", "COD_ARTE"] <- "302"
+# This error is usually detected in checkVariableWithMetierCoherence(records, "COD_ARTE"). To fix it: 
+# records[records$ESTRATO_RIM=="PALANGRE_CN" & records$COD_PUERTO=="0913", "COD_ARTE"] <- "302"
 
 check_origen <- checkVariableWithMetierCoherence(records, "COD_ORIGEN")
-
 
 check_procedencia <- checkVariableWithMaster("PROCEDENCIA", records)
 
 check_metier_coherence <- checkMetierCoherence(records)
-
-# Use in case: records[records$ESTRATO_RIM=="CERCO_GC" & records$COD_ORIGEN=="010", "COD_ORIGEN"] <- "011"
+check_metier_coherence <- humanize(check_metier_coherence)
+# Fix the error detected in the upper check before dumping the final dataframe 
+# This error is usually detected in checkMetierCoherence. To fix it: 
+# records[records$ESTRATO_RIM=="CERCO_GC" & records$COD_ORIGEN=="010", "COD_ORIGEN"] <- "011"
 
 check_estrategia <- check_strategy(records)
 
