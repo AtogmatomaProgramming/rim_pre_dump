@@ -1,6 +1,6 @@
 # # Predump on-shore data review
 
-### v.1.3.6
+### v.1.3.7
 
 The SAP project from the Spanish Institute of Oceanography (IEO) obtains, analyzes and prepare the necessary information to monitor the fishery activity in Northeast Atlantic.
 
