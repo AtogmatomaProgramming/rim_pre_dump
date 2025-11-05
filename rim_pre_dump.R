@@ -48,24 +48,22 @@ library(sapmuebase) # and load the library
 # install.packages("openxlsx")
 library(openxlsx)
 
+# ---- install archive package
+# install.packages("archive")
+library(archive)
+
+
 # FUNCTIONS --------------------------------------------------------------------
 # All the functions required in this script are located in
 # revision_volcado_functions.R file.
 source("rim_pre_dump_functions.R")
 source("R/rim_pre_dump_functions_final.R")
 
-# YOU HAVE ONLY TO CHANGE THIS VARIABLES: ----
+# YOU HAVE ONLY TO CHANGE THIS VARIABLES: --------------------------------------
 
-BASE_PATH <- file.path(getwd(), "data/2025/2025_04")
+MONTH <- 12
 
-PATH_SHARE_FOLDER <- "C:/Users/ieoma/Nextcloud/SAP_RIM/RIM_data_review"
-
-# Name of the folder that is stored the items to send error mail
-PRIVATE_FOLDER_NAME <- "private"
-
-FILENAME <- "muestreos_4_ICES.txt"
-
-MONTH <- 4
+MONTH_AS_CHARACTER <- sprintf("%02d", MONTH)
 
 YEAR <- "2025"
 
@@ -75,67 +73,153 @@ suffix_multiple_months <- ""
 
 # Suffix to add at the end of the export file name. This suffix will be added to
 # the end of the file name with a "_" as separation.
-suffix <- ""
+suffix <- "TEST"
+
+# Path where the ".rar" file stored and you need to move to original folder
+# STORED_FILE_PATH <- "D:/cost_santander_global/b_trabajo/c_muestreos/d_predump/rim_pre_dump-master_2"
+
+# Define work file name
+
+FILENAME <- "muestreos_8_ICES_A CORUÑA Y LLANES.rar"
+
+# ------------------------------------------------------------------------------
+
+# Identifier for the directory where the working files are in
+IDENTIFIER <- createIdentifier(MONTH, 
+                               YEAR, 
+                               MONTH_AS_CHARACTER, 
+                               suffix_multiple_months, 
+                               suffix)
+
+BASE_PATH <- file.path(getwd(), 
+                       "data", 
+                       YEAR)
+
+# Create the base work directory (YYYY_MM - YEAR_MONTH)
+
+YEAR_BASE_PATH <- file.path(BASE_PATH, 
+                            IDENTIFIER)
+
+ifelse(dir.exists(YEAR_BASE_PATH), 
+       message(paste("Directory", 
+                     IDENTIFIER, 
+                     "already exists")), 
+       dir.create(YEAR_BASE_PATH))
+
+
+# Name of the folder that is stored the items to send error mail
+PRIVATE_FOLDER_NAME <- "private"
+
+# USER SETTINGS ----------------------------------------------------------------
+# This file contains the user settings:
+# - Share folder's path
+source(file.path(PRIVATE_FOLDER_NAME, 
+                 ("user_settings.R")))
+
 
 # VARIABLES --------------------------------------------------------------------
 ERRORS <- list() # list with all errors found in data frames
 # MESSAGE_ERRORS<- list() #list with the errors
 
 PATH_FILE <- getwd()
-MONTH_AS_CHARACTER <- sprintf("%02d", MONTH)
-LOG_FILE <- paste("LOG_", YEAR, "_", MONTH_AS_CHARACTER, ".csv", sep = "")
-PATH_LOG_FILE <- file.path(paste(BASE_PATH, LOG_FILE, sep = "/"))
-
-
+LOG_FILE <- paste0("LOG_", 
+                  YEAR, 
+                  "_", 
+                  MONTH_AS_CHARACTER, 
+                  ".csv")
+PATH_LOG_FILE <- file.path(paste(BASE_PATH, 
+                                 LOG_FILE, 
+                                 sep = "/"))
 
 # Path to store the private files (which are not shared in this repository)
-PATH_PRIVATE <- file.path(getwd(), PRIVATE_FOLDER_NAME)
-# Path of the files to import
-PATH_IMPORT <- file.path(BASE_PATH, "originals")
-# Path where the final files are created
-PATH_EXPORT <- file.path(BASE_PATH, "finals")
-# Path where the error files are generated
-PATH_ERRORS <- file.path(BASE_PATH, "errors")
-# Path where the backup files are stored
-PATH_BACKUP <- file.path(BASE_PATH, "backup")
+PATH_PRIVATE <- file.path(getwd(), 
+                          PRIVATE_FOLDER_NAME)
 
-# Create/check the existence of the mandatory folders
-FOLDERS <- list(PATH_IMPORT, PATH_EXPORT, PATH_ERRORS, PATH_BACKUP)
-lapply(FOLDERS, createDirectory)
 
-# Identifier for the directory where the working files are in
-IDENTIFIER <- createIdentifier(MONTH, YEAR, MONTH_AS_CHARACTER, suffix_multiple_months, suffix)
+# List with the main internal work directories
+
+directories_name <- list(originals = c("originals"), # Path of the files to import 
+                         finals = c("finals"), # Path where the final files are created
+                         errors = c("errors"), # Path where the error files are generated
+                         backup = c("backup") # Path where the backup files are stored
+                         )
+
+# Create/check the existence of the mandatory folders and import its path
+directories_path <- lapply(directories_name, 
+                           manage_work_folder, 
+                           YEAR_BASE_PATH)
 
 # Path to shared folder
-PATH_SHARE_ERRORS <- file.path(PATH_SHARE_FOLDER, YEAR, IDENTIFIER)
+PATH_SHARE_ERRORS <- file.path(PATH_SHARE_FOLDER, 
+                               YEAR, 
+                               IDENTIFIER)
 
 # List with the common fields used in all tables
-BASE_FIELDS <- c("COD_PUERTO", "FECHA", "COD_BARCO", "ESTRATO_RIM", "COD_TIPO_MUE")
+BASE_FIELDS <- c("COD_PUERTO", 
+                 "FECHA", 
+                 "COD_BARCO", 
+                 "ESTRATO_RIM", 
+                 "COD_TIPO_MUE")
 
 # Files to backup
-FILES_TO_BACKUP <- c(
-  "rim_pre_dump.R",
-  "rim_pre_dump_functions.R"
-)
+FILES_TO_BACKUP <- c("rim_pre_dump.R", 
+                     "rim_pre_dump_functions.R")
 
 # Mail template to send different weight error
 EMAIL_TEMPLATE <- "errors_email.Rmd"
 
 # Read the list of contact to send errors
-CONTACTS <- read.csv(file.path(PATH_PRIVATE, "contacts.csv"))
+CONTACTS <- read.csv(file.path(PATH_PRIVATE, 
+                               "contacts.csv"))
 
+# REUBICATION OF THE FILE ------------------------------------------------------
+# Move the ubication of ICES compressed file in the case it is not in 
+# originals' folder
+
+move_file(STORED_FILE_PATH, 
+          directories_path[["originals"]],
+          FILENAME)
+
+# UNCOMPRESS SAMPLES FILE ------------------------------------------------------
+# Extrat the files inside de compressed file
+
+COMPRESSED_FILE_PATH <- file.path(directories_path[["originals"]], 
+                                  FILENAME)
+
+archive_extract(COMPRESSED_FILE_PATH,
+                directories_path[["originals"]])
+
+# USE THE ".txt" FILE TO WORK WITH IT ------------------------------------------
+#' When we extract the files inside the ".rar", we have
+#' to take the ".txt" archive to make the errors analysis
+
+original_files <- list.files(directories_path[["originals"]])
+
+FILENAME <- grep(".txt", 
+                 original_files, 
+                 value = TRUE)
 
 # IMPORT FILES -----------------------------------------------------------------
-records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_IMPORT)
+records <- importIPDFile(FILENAME, 
+                         by_month = MONTH, 
+                         path = directories_path[["originals"]])
 
 # Import sireno fleet
 # Firstly download the fleet file from Informes --> Listados --> Por proyecto
 # in SIRENO, and then:
-fleet_sireno <- read.csv(paste0(getwd(), "/private/", "IEOPROBARACANDELARIO.TXT"),
-  sep = ";", encoding = "latin1"
-)
-fleet_sireno <- fleet_sireno[, c("COD.BARCO", "NOMBRE", "ESTADO")]
-fleet_sireno$COD.BARCO <- gsub("'", "", fleet_sireno$COD.BARCO)
+fleet_sireno <- read.csv(paste0(getwd(), 
+                                "/private/", 
+                                "IEOPROBARACANDELARIO.TXT"), 
+                         sep = ";", 
+                         encoding = "latin1")
+
+fleet_sireno <- fleet_sireno[, c("COD.BARCO", 
+                                 "NOMBRE", 
+                                 "ESTADO")]
+
+fleet_sireno$COD.BARCO <- gsub("'", 
+                               "", 
+                               fleet_sireno$COD.BARCO)
 
 # EXPORT FILE TO CSV -----------------------------------------------------------
 # file_name <- unlist(strsplit(FILENAME, '.', fixed = T))
@@ -154,15 +238,20 @@ check_mes <- check_month(records)
 # check_origen <- checkVariableWithPrescriptions(records, "COD_ORIGEN")
 # coherence_prescription_rim_mt2 <- coherencePrescriptionsRimMt2(records)
 
-check_estrato_rim <- checkVariableWithMetierCoherence(records, "ESTRATO_RIM")
-check_arte <- checkVariableWithMetierCoherence(records, "COD_ARTE")
+check_estrato_rim <- checkVariableWithMetierCoherence(records, 
+                                                      "ESTRATO_RIM")
+check_arte <- checkVariableWithMetierCoherence(records, 
+                                               "COD_ARTE")
 # check_arte <- humanize(check_arte)
 # This error is usually detected in checkVariableWithMetierCoherence(records, "COD_ARTE"). To fix it:
 # records[records$ESTRATO_RIM=="PALANGRE_CN" & records$COD_PUERTO=="0913", "COD_ARTE"] <- "302"
+# records[records$ESTRATO_RIM=="PALANGRE_CN" & records$COD_PUERTO=="1423", "COD_ARTE"] <- "302"
 
-check_origen <- checkVariableWithMetierCoherence(records, "COD_ORIGEN")
+check_origen <- checkVariableWithMetierCoherence(records, 
+                                                 "COD_ORIGEN")
 
-check_procedencia <- checkVariableWithMaster("PROCEDENCIA", records)
+check_procedencia <- checkVariableWithMaster("PROCEDENCIA", 
+                                             records)
 
 check_metier_coherence <- checkMetierCoherence(records)
 check_metier_coherence <- humanize(check_metier_coherence)
@@ -214,10 +303,8 @@ check_one_category_with_different_landing_weights <- one_category_with_different
 
 # Create files to send to sups:
 check_one_category_with_different_landing_weights <- humanize(check_one_category_with_different_landing_weights)
-errors_category <- separateDataframeByInfluenceArea(
-  check_one_category_with_different_landing_weights,
-  "COD_PUERTO"
-)
+errors_category <- separateDataframeByInfluenceArea(check_one_category_with_different_landing_weights, 
+                                                    "COD_PUERTO")
 # remove empty data frames from list:
 errors_category <- Filter(function(x) {
   nrow(x) > 0
@@ -232,10 +319,16 @@ suf <- paste0(
   "errors_categorias_con_varios_pesos_desembarcados"
 )
 
-exportListToXlsx(errors_category, suffix = suf, path = PATH_ERRORS)
+
+# exportListToXlsx(errors_category, suffix = suf, path = PATH_ERRORS)
+
+exportListToXlsx(errors_category, 
+                 suffix = suf, 
+                 path = directories_path[["errors"]])
 
 # SAVE FILES TO SHARED FOLDER --------------------------------------------------
-copyFilesToFolder(PATH_ERRORS, PATH_SHARE_ERRORS)
+copyFilesToFolder(directories_path[["errors"]], 
+                  PATH_SHARE_ERRORS)
 
 # To send the errors category for mail
 
@@ -252,10 +345,10 @@ accesory_email_info <- data.frame(
     "GS"
   ),
   LINK = c(
-    "https://saco.csic.es/index.php/f/481810193",
-    "https://saco.csic.es/index.php/f/481810195",
-    "https://saco.csic.es/index.php/f/481810197",
-    "https://saco.csic.es/index.php/f/481810196"
+    "",
+    "",
+    "",
+    ""
   ),
   NOTES = c(
     "",
@@ -280,21 +373,25 @@ records <- fix_medida_variable(records)
 
 # Check if there are vessels not registered in fleet census
 # TODO: check if this is mandatory to check here, in rim_pre_dump.
-not_registered_vessels <- unique(records[, "COD_BARCO", drop = FALSE])
+not_registered_vessels <- unique(records[, "COD_BARCO", 
+                                         drop = FALSE])
 not_registered_vessels <- merge(not_registered_vessels,
   fleet_sireno,
   by.x = "COD_BARCO",
   by.y = "COD.BARCO",
   all.x = TRUE
 )
-registered <- c("ALTA DEFINITIVA", "G - A.P. POR NUEVA CONSTRUCCION", "H - A.P. POR REACTIVACION")
+registered <- c("ALTA DEFINITIVA", 
+                "G - A.P. POR NUEVA CONSTRUCCION", 
+                "H - A.P. POR REACTIVACION")
 not_registered_vessels <- not_registered_vessels[!not_registered_vessels$ESTADO %in% registered, ]
 not_registered_vessels <- not_registered_vessels[!is.na(not_registered_vessels$ESTADO), ]
 
 
 # Check if there are vessels not filtered in ICES project. In this case a
 # a warning should be sent to Ricardo with the data upload in Sireno.
-not_filtered_vessels <- unique(records[, "COD_BARCO", drop = FALSE])
+not_filtered_vessels <- unique(records[, "COD_BARCO", 
+                                       drop = FALSE])
 not_filtered_vessels <- merge(not_filtered_vessels,
   fleet_sireno,
   by.x = "COD_BARCO",
@@ -310,17 +407,20 @@ records$COD_PAIS <- 724
 
 # Check if there are any vessel which is SIRENO code doesn't start with 2 or 0
 # and five digits more. In case there are any, check if it is a foreign ship.
-which(!grepl("^[2,0]\\d{5}", records$COD_BARCO))
+which(!grepl("^[2,0]\\d{5}", 
+             records$COD_BARCO))
 
 
 # source: https://github.com/awalker89/openxlsx/issues/111
 Sys.setenv("R_ZIPCMD" = "C:/Rtools/bin/zip.exe") ## path to zip.exe
-export_to_excel(records, PATH_EXPORT)
+export_to_excel(records, 
+                directories_path[["finals"]])
 
 
 # BACKUP SCRIPTS AND RELATED FILES ----
 # first save all files opened
 rstudioapi::documentSaveAll()
 # and the backup the scripts and files:
-sapmuebase::backupScripts(FILES_TO_BACKUP, path_backup = PATH_BACKUP)
+sapmuebase::backupScripts(FILES_TO_BACKUP, 
+                          path_backup = directories_path[["backup"]])
 # backup_files()
