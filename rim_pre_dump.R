@@ -95,7 +95,7 @@ suffix_multiple_months <- ""
 
 # Suffix to add at the end of the export file name. This suffix will be added to
 # the end of the file name with a "_" as separation.
-suffix <- ""
+suffix <- "TEST"
 
 # Path where the ".rar" file stored and you need to move to original folder
 # STORED_FILE_PATH <- "D:/cost_santander_global/b_trabajo/c_muestreos/d_predump/rim_pre_dump-master_2"
@@ -103,7 +103,7 @@ STORED_FILE_PATH <- "C:/Users/alberto.candelario/Downloads"
 
 # Define work file name
 
-FILENAME <- "muestreos_9_ICES.rar"
+FILENAME <- paste0("muestreos_", MONTH, "_ICES.rar")
 
 # ------------------------------------------------------------------------------
 
@@ -114,20 +114,12 @@ IDENTIFIER <- createIdentifier(MONTH,
                                suffix_multiple_months, 
                                suffix)
 
+# Path of the base work directory (YYYY_MM - YEAR_MONTH)
+
 BASE_PATH <- file.path(getwd(), 
                        "data", 
-                       YEAR)
-
-# Create the base work directory (YYYY_MM - YEAR_MONTH)
-
-YEAR_BASE_PATH <- file.path(BASE_PATH, 
-                            IDENTIFIER)
-
-ifelse(dir.exists(YEAR_BASE_PATH), 
-       message(paste("Directory", 
-                     IDENTIFIER, 
-                     "already exists")), 
-       dir.create(YEAR_BASE_PATH))
+                       YEAR,
+                       IDENTIFIER)
 
 
 # Name of the folder that is stored the items to send error mail
@@ -170,7 +162,7 @@ directories_name <- list(originals = c("originals"), # Path of the files to impo
 # Create/check the existence of the mandatory folders and import its path
 directories_path <- lapply(directories_name, 
                            manage_work_folder, 
-                           YEAR_BASE_PATH)
+                           BASE_PATH)
 
 # Path to shared folder
 PATH_SHARE_ERRORS <- file.path(PATH_SHARE_FOLDER, 
