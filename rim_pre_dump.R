@@ -54,14 +54,36 @@ library(archive)
 
 
 # FUNCTIONS --------------------------------------------------------------------
-# All the functions required in this script are located in
-# revision_volcado_functions.R file.
-source("rim_pre_dump_functions.R")
-source("R/rim_pre_dump_functions_final.R")
+# Get the complete path for all function's files 
+function_files <- list.files(file.path(getwd(), 
+                                       "R"), 
+                             full.names = TRUE, 
+                             recursive = TRUE)
+
+# Import all functions 
+
+sapply(function_files,
+       function(x){
+         tryCatch({
+           
+           source(x)
+           
+         }, error = function(e){
+           
+           cat("An error occurred:", conditionMessage(e), "\n")
+           
+         }, warning = function(w){
+           
+           cat("A warning occurred:", conditionMessage(w), "\n")
+           
+         }
+         )
+       })
+
 
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES: --------------------------------------
 
-MONTH <- 12
+MONTH <- 9
 
 MONTH_AS_CHARACTER <- sprintf("%02d", MONTH)
 
@@ -73,14 +95,15 @@ suffix_multiple_months <- ""
 
 # Suffix to add at the end of the export file name. This suffix will be added to
 # the end of the file name with a "_" as separation.
-suffix <- "TEST"
+suffix <- ""
 
 # Path where the ".rar" file stored and you need to move to original folder
 # STORED_FILE_PATH <- "D:/cost_santander_global/b_trabajo/c_muestreos/d_predump/rim_pre_dump-master_2"
+STORED_FILE_PATH <- "C:/Users/alberto.candelario/Downloads"
 
 # Define work file name
 
-FILENAME <- "muestreos_8_ICES_A CORUÑA Y LLANES.rar"
+FILENAME <- "muestreos_9_ICES.rar"
 
 # ------------------------------------------------------------------------------
 
@@ -181,7 +204,7 @@ move_file(STORED_FILE_PATH,
           FILENAME)
 
 # UNCOMPRESS SAMPLES FILE ------------------------------------------------------
-# Extrat the files inside de compressed file
+# Extrat the files inside the compressed file
 
 COMPRESSED_FILE_PATH <- file.path(directories_path[["originals"]], 
                                   FILENAME)
@@ -345,10 +368,10 @@ accesory_email_info <- data.frame(
     "GS"
   ),
   LINK = c(
+    "https://saco.csic.es/index.php/f/618229645",
+    "https://saco.csic.es/index.php/f/618229643",
     "",
-    "",
-    "",
-    ""
+    "https://saco.csic.es/index.php/f/618229644"
   ),
   NOTES = c(
     "",

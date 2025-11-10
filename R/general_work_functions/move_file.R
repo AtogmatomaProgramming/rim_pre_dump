@@ -7,9 +7,9 @@
 #' @returns a message which notifies if the file where 
 #' stored in the new place
 
-move_file <- function(origin_folder, 
-                      destiny_folder, 
-                      file_name){
+move_file <- function(file_name,
+                      origin_folder, 
+                      destiny_folder){
   
   
   tryCatch({
