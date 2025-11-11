@@ -8,19 +8,27 @@
 #' has been created or just already exists.
 
 manage_work_folder <- function(folder_name,
-                              base_path = ""){
+                               base_path = ""){
   
   tryCatch({
     
-    folder_path <- file.path(base_path,
-                             folder_name)
+    if(base_path != ""){
+      
+      folder_path <- file.path(base_path,
+                               PATH_BACKUP)
+      
+    } else {
+      
+      folder_path <- folder_name
+      
+    }
     
     if(dir.exists(folder_path)){
       message(paste0("Directory '", folder_name, "' already exists."))
     } else {
       dir.create(folder_path,
                  recursive = TRUE) # recursive = TRUE create all the folders
-                                   # present in the final path
+      # present in the final path
       message(paste0("Directory '", folder_name, "' has been correctly created."))
     }
     
