@@ -15,7 +15,7 @@ manage_work_folder <- function(folder_name,
     if(base_path != ""){
       
       folder_path <- file.path(base_path,
-                               PATH_BACKUP)
+                               folder_name)
       
     } else {
       
