@@ -56,16 +56,14 @@ source("R/rim_pre_dump_functions_final.R")
 
 # YOU HAVE ONLY TO CHANGE THIS VARIABLES: ----
 
-BASE_PATH <- file.path(getwd(), "data/2025/2025_04")
-
-PATH_SHARE_FOLDER <- "C:/Users/ieoma/Nextcloud/SAP_RIM/RIM_data_review"
+BASE_PATH <- file.path(getwd(), "data/2025/2025_05")
 
 # Name of the folder that is stored the items to send error mail
 PRIVATE_FOLDER_NAME <- "private"
 
-FILENAME <- "muestreos_4_ICES.txt"
+FILENAME <- "muestreos_5_ICES.txt"
 
-MONTH <- 4
+MONTH <- 5
 
 YEAR <- "2025"
 
@@ -86,7 +84,9 @@ MONTH_AS_CHARACTER <- sprintf("%02d", MONTH)
 LOG_FILE <- paste("LOG_", YEAR, "_", MONTH_AS_CHARACTER, ".csv", sep = "")
 PATH_LOG_FILE <- file.path(paste(BASE_PATH, LOG_FILE, sep = "/"))
 
+# Import local share path
 
+source(file.path(PRIVATE_FOLDER_NAME, ("user_settings.R")))
 
 # Path to store the private files (which are not shared in this repository)
 PATH_PRIVATE <- file.path(getwd(), PRIVATE_FOLDER_NAME)
