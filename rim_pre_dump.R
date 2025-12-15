@@ -16,6 +16,7 @@
 #                     process and final files)
 #          - errors (folder with the errors found in the data)
 #          - finals (folder with the final files to dump in SIRENO database)
+#   - private (folder with sensitive information, like contacts, cfpo, etc.)
 #
 # The script will generate a excel file ready to dump in SIRENO database. It
 # will be stored in the folder ./data/YYYY/YYYY_MM/finals/.
@@ -58,8 +59,6 @@ source("R/rim_pre_dump_functions_final.R")
 
 BASE_PATH <- file.path(getwd(), "data/2025/2025_04")
 
-PATH_SHARE_FOLDER <- "C:/Users/ieoma/Nextcloud/SAP_RIM/RIM_data_review"
-
 # Name of the folder that is stored the items to send error mail
 PRIVATE_FOLDER_NAME <- "private"
 
@@ -99,6 +98,11 @@ PATH_ERRORS <- file.path(BASE_PATH, "errors")
 # Path where the backup files are stored
 PATH_BACKUP <- file.path(BASE_PATH, "backup")
 
+# USER SETTINGS -------------------------------------------------------------
+# This file contains the user settings:
+# - PATH_SHARE_FOLDER: path of cloud service where the files will be shared.
+source(file.path(PRIVATE_FOLDER_NAME, "user_settings.R"))
+
 # Create/check the existence of the mandatory folders
 FOLDERS <- list(PATH_IMPORT, PATH_EXPORT, PATH_ERRORS, PATH_BACKUP)
 lapply(FOLDERS, createDirectory)
@@ -131,7 +135,7 @@ records <- importIPDFile(FILENAME, by_month = MONTH, path = PATH_IMPORT)
 # Import sireno fleet
 # Firstly download the fleet file from Informes --> Listados --> Por proyecto
 # in SIRENO, and then:
-fleet_sireno <- read.csv(paste0(getwd(), "/private/", "IEOPROBARACANDELARIO.TXT"),
+fleet_sireno <- read.csv(file.path(PATH_PRIVATE, "IEOPROBARMARCO.TXT"),
   sep = ";", encoding = "latin1"
 )
 fleet_sireno <- fleet_sireno[, c("COD.BARCO", "NOMBRE", "ESTADO")]
